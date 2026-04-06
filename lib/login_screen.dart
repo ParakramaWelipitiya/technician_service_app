@@ -12,62 +12,190 @@ class LoginScreen extends StatefulWidget {
 class _LoginScreenState extends State<LoginScreen> {
   final _emailController = TextEditingController();
   final _passwordController = TextEditingController();
-  String _selectedRole = 'Customer'; // Default role
+  final _formKey = GlobalKey<FormState>();
+  String _selectedRole = 'Customer';
+  bool _isLoading = false;
+  bool _isLogin = true;
 
   Future<void> _signUp() async {
+    setState(() => _isLoading = true);
     try {
-      // 1. Create User in Firebase Auth
-      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      UserCredential userCredential = await FirebaseAuth.instance
+          .createUserWithEmailAndPassword(
+            email: _emailController.text.trim(),
+            password: _passwordController.text.trim(),
+          );
+
+      await FirebaseFirestore.instance
+          .collection('users')
+          .doc(userCredential.user!.uid)
+          .set({
+            'email': _emailController.text.trim(),
+            'role': _selectedRole,
+            'createdAt': FieldValue.serverTimestamp(),
+          });
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text("Account created as $_selectedRole!")),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message ?? "An error occurred")),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  Future<void> _login() async {
+    setState(() => _isLoading = true);
+    try {
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
         email: _emailController.text.trim(),
         password: _passwordController.text.trim(),
       );
 
-      // 2. Save Role in Firestore
-      await FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid).set({
-        'email': _emailController.text.trim(),
-        'role': _selectedRole,
-        'createdAt': DateTime.now(),
-      });
-
-      print("User Created as $_selectedRole");
-    } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.toString())));
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Welcome back!")),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message ?? "Login failed")),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      body: Padding(
-        padding: const EdgeInsets.all(20.0),
-        child: Column(
-          mainAxisAlignment: MainAxisAlignment.center,
-          children: [
-            const Text("Service Marketplace", style: TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
-            const SizedBox(height: 30),
-            TextField(controller: _emailController, decoration: const InputDecoration(labelText: "Email")),
-            TextField(controller: _passwordController, decoration: const InputDecoration(labelText: "Password"), obscureText: true),
-            const SizedBox(height: 20),
-            
-            // Role Selection Toggle
-            SegmentedButton<String>(
-              segments: const [
-                ButtonSegment(value: 'Customer', label: Text('I need help'), icon: Icon(Icons.person)),
-                ButtonSegment(value: 'Technician', label: Text('I am a Pro'), icon: Icon(Icons.build)),
-              ],
-              selected: {_selectedRole},
-              onSelectionChanged: (Set<String> newSelection) {
-                setState(() { _selectedRole = newSelection.first; });
-              },
-            ),
-            
-            const SizedBox(height: 30),
-            ElevatedButton(
-              onPressed: _signUp, 
-              style: ElevatedButton.styleFrom(minimumSize: const Size.fromHeight(50)),
-              child: const Text("Create Account"),
-            ),
-          ],
+      body: Form(
+        key: _formKey,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            return SingleChildScrollView(
+              padding: const EdgeInsets.all(24.0),
+              child: ConstrainedBox(
+                constraints: BoxConstraints(
+                  minHeight: constraints.maxHeight,
+                ),
+                child: IntrinsicHeight(
+                  child: Column(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: [
+                      const Icon(Icons.build_circle, size: 80, color: Colors.blue),
+                      const SizedBox(height: 16),
+                      const Text(
+                        "Welcome to Servo",
+                        style: TextStyle(fontSize: 32, fontWeight: FontWeight.bold),
+                      ),
+                      const SizedBox(height: 32),
+                      
+                      // Email Field
+                      TextFormField(
+                        controller: _emailController,
+                        decoration: const InputDecoration(
+                          labelText: "Email",
+                          border: OutlineInputBorder(),
+                        ),
+                        autovalidateMode: AutovalidateMode.onUserInteraction,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) return 'Please enter your email';
+                          if (!value.contains('@')) return 'Please enter a valid email address';
+                          return null;
+                        },
+                      ),
+                      const SizedBox(height: 16),
+                      
+                      // Password Field
+                      TextFormField(
+                        controller: _passwordController,
+                        decoration: const InputDecoration(
+                          labelText: "Password",
+                          border: OutlineInputBorder(),
+                        ),
+                        obscureText: true,
+                        autovalidateMode: AutovalidateMode.onUserInteraction,
+                        validator: (value) {
+                          if (value == null || value.isEmpty) return 'Please enter your password';
+                          if (value.length < 6) return 'Password must be at least 6 characters';
+                          return null;
+                        },
+                      ),
+                      
+                      // Role Selection (Only shows if signing up)
+                      if (!_isLogin) ...[
+                        const SizedBox(height: 24),
+                        const Text("I am joining as a:"),
+                        const SizedBox(height: 8),
+                        SegmentedButton<String>(
+                          segments: const [
+                            ButtonSegment(
+                              value: 'Customer',
+                              label: Text('Customer'),
+                              icon: Icon(Icons.person),
+                            ),
+                            ButtonSegment(
+                              value: 'Technician',
+                              label: Text('Technician'),
+                              icon: Icon(Icons.handyman),
+                            ),
+                          ],
+                          selected: {_selectedRole},
+                          onSelectionChanged: (newSelection) {
+                            setState(() => _selectedRole = newSelection.first);
+                          },
+                        ),
+                      ],
+                      
+                      const SizedBox(height: 32),
+
+                      // Submit Button
+                      _isLoading
+                          ? const CircularProgressIndicator()
+                          : ElevatedButton(
+                              onPressed: () {
+                                if (_formKey.currentState!.validate()) {
+                                  _isLogin ? _login() : _signUp();
+                                }
+                              },
+                              style: ElevatedButton.styleFrom(
+                                minimumSize: const Size.fromHeight(55),
+                                backgroundColor: Colors.blue,
+                                foregroundColor: Colors.white,
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(12),
+                                ),
+                              ),
+                              child: Text(_isLogin ? "Login" : "Create Account"),
+                            ),
+
+                      // Toggle between Login and Sign Up
+                      TextButton(
+                        onPressed: () {
+                          setState(() => _isLogin = !_isLogin);
+                        },
+                        child: Text(
+                          _isLogin
+                              ? "Don't have an account? Sign Up"
+                              : "Already have an account? Login",
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            );
+          },
         ),
       ),
     );
