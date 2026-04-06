@@ -2,7 +2,8 @@ import 'package:flutter/material.dart';
 import 'package:firebase_core/firebase_core.dart';
 import 'firebase_options.dart';
 // Custom file imports are here
-import 'login_screen.dart'; 
+import 'login_screen.dart';
+import 'splash_screen.dart';
 
 void main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -26,7 +27,7 @@ class TechnicianApp extends StatelessWidget {
         useMaterial3: true,
       ),
       // LoginScreen 
-      home: const LoginScreen(), 
+      home: const SplashScreen(),
     );
   }
 }
