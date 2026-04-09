@@ -1,4 +1,7 @@
+import 'dart:math';
+
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'technician_profile_screen.dart';
 
 class AllTechniciansScreen extends StatelessWidget {
@@ -13,7 +16,7 @@ class AllTechniciansScreen extends StatelessWidget {
         foregroundColor: Colors.black87,
         elevation: 0,
       ),
-      body: ListView(
+      /* body: ListView(
         padding: const EdgeInsets.all(16),
         children: [
           _buildVerticalTechCard(context, "Syeila Onstefen", "Plumber", "4.9", "(200)", "\$34.00", "2.4 km", "assets/sample_6.png"),
@@ -21,6 +24,40 @@ class AllTechniciansScreen extends StatelessWidget {
           _buildVerticalTechCard(context, "John Doe", "Electricity", "4.7", "(80)", "\$40.00", "5 km", "assets/sample_8.png"),
           _buildVerticalTechCard(context, "Alex Fixit", "Handcraft", "4.5", "(42)", "\$25.00", "8 km", "assets/sample_9.png"),
         ],
+      ),
+      */
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance.collection('technicians').snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.hasError) {
+            return const Center(child: Text("Error loading technicians"));
+          }
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+          if (snapshot.hasData) {
+            final technicians = snapshot.data!.docs;
+            return ListView.builder(
+              padding: const EdgeInsets.all(16),
+              itemCount: technicians.length,
+              itemBuilder: (context, index) {
+                var technician = technicians[index] ;
+                return _buildVerticalTechCard(
+                  context,
+                  technician['userName'] ?? 'Unknown',
+                  technician['category'] ?? 'Unknown',
+                  technician['rating'] ?? '0',
+                  technician['reviews'] ?? '(0)',
+                  technician['price'] ?? '\$0.00',
+                  technician['location'] ?? 'Unknown',
+                  technician['profilePicture'] ?? '',
+                );
+              },
+            );
+          } else {
+            return const Center(child: Text("No technicians found"));
+          }
+        },
       ),
     );
   }

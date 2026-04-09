@@ -48,7 +48,9 @@ class _LoginScreenState extends State<LoginScreen> {
           'userName': '', // Placeholder for username, can be updated later
           'category': '', // Placeholder for category, can be updated later
           'profilePicture': '', // Placeholder for profile picture URL, can be updated later
-          'rating': 0.0, // Placeholder for rating, can be updated later
+          'price': '', // Placeholder for price, can be updated later
+          'rating': '0', // Placeholder for rating, can be updated later
+          'reviews': '(0)', // Placeholder for reviews count, can be updated later
           'location': '', // Placeholder for location, can be updated later
           'contactInfo': '', // Placeholder for contact info, can be updated later
           'totalBookings': 0, // Placeholder for total bookings, can be updated later
@@ -108,6 +110,70 @@ class _LoginScreenState extends State<LoginScreen> {
           const SnackBar(content: Text("Welcome back!")),
         );
         
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message ?? "Login failed")),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+
+  // These methods are for development/testing purposes to quickly log in as a technician or customer without going through the form
+  Future<void> _devLoginAsTechnician() async {
+    setState(() => _isLoading = true);
+    try {
+      // For development purposes, we can use a hardcoded technician account
+      String email = "techguy@gmail.com";
+      String password = "000000";
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Logged in as technician!")),
+        );
+
+        Navigator.pushReplacement(
+          context,
+          MaterialPageRoute(builder: (context) => const HomeScreen()),
+        );
+      }
+    } on FirebaseAuthException catch (e) {
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          SnackBar(content: Text(e.message ?? "Login failed")),
+        );
+      }
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
+  Future<void> _devLoginAsCustomer() async {
+    setState(() => _isLoading = true);
+    try {
+      // For development purposes, we can use a hardcoded customer account
+      String email = "test@gmail.com";
+      String password = "123456";
+      await FirebaseAuth.instance.signInWithEmailAndPassword(
+        email: email,
+        password: password,
+      );
+
+      if (mounted) {
+        ScaffoldMessenger.of(context).showSnackBar(
+          const SnackBar(content: Text("Logged in as customer!")),
+        );
+
         Navigator.pushReplacement(
           context,
           MaterialPageRoute(builder: (context) => const HomeScreen()),
@@ -239,6 +305,22 @@ class _LoginScreenState extends State<LoginScreen> {
                               : "Already have an account? Login",
                         ),
                       ),
+                      // DEV LOGIN BUTTONS (Only for development/testing purposes, can be removed in production)
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                        children: [
+                          ElevatedButton(
+                            onPressed: _devLoginAsTechnician,
+                            child: const Text("DevLogin Technician"),
+                          ),
+                          ElevatedButton(
+                            onPressed: _devLoginAsCustomer,
+                            child: const Text("DevLogin Customer"),
+                          ),
+                        ],
+                      ),
+
                     ],
                   ),
                 ),
