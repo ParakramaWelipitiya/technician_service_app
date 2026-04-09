@@ -1,13 +1,14 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'discover_screen.dart';
 import 'chat_screen.dart';
 import 'history_screen.dart';
-import 'profile_screen.dart'; 
+import 'profile_screen.dart';
 import 'notifications_screen.dart';
 import 'category_screen.dart';
-import 'technician_profile_screen.dart'; 
-import 'all_technicians_screen.dart';    
+import 'technician_profile_screen.dart';
+import 'all_technicians_screen.dart';
 
 class CustomerDashboard extends StatefulWidget {
   const CustomerDashboard({super.key});
@@ -20,11 +21,11 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
   int _selectedIndex = 0;
 
   final List<Widget> _pages = [
-    const DashboardHomeView(), 
+    const DashboardHomeView(),
     const DiscoverScreen(),
     const ChatScreen(),
     const HistoryScreen(),
-    const ProfileScreen(), 
+    const ProfileScreen(),
   ];
 
   void _onItemTapped(int index) {
@@ -40,15 +41,21 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-        type: BottomNavigationBarType.fixed, 
+        type: BottomNavigationBarType.fixed,
         selectedItemColor: Colors.blue.shade700,
         unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
           BottomNavigationBarItem(icon: Icon(Icons.search), label: "Discover"),
-          BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: "Chat"),
+          BottomNavigationBarItem(
+            icon: Icon(Icons.chat_bubble_outline),
+            label: "Chat",
+          ),
           BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
-          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: "Profile"), 
+          BottomNavigationBarItem(
+            icon: Icon(Icons.person_outline),
+            label: "Profile",
+          ),
         ],
       ),
     );
@@ -62,7 +69,7 @@ class DashboardHomeView extends StatelessWidget {
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     String displayName = "User";
-    
+
     if (user != null && user.email != null) {
       displayName = user.email!.split('@')[0];
       if (displayName.isNotEmpty) {
@@ -79,14 +86,16 @@ class DashboardHomeView extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [
-                  Colors.blue.shade300,
-                  Colors.white,
-                ],
+                colors: [Colors.blue.shade300, Colors.white],
                 stops: const [0.0, 1.0],
               ),
             ),
-            padding: const EdgeInsets.only(top: 60, left: 20, right: 20, bottom: 20),
+            padding: const EdgeInsets.only(
+              top: 60,
+              left: 20,
+              right: 20,
+              bottom: 20,
+            ),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -98,24 +107,36 @@ class DashboardHomeView extends StatelessWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          "Hello 👋", 
-                          style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 14)
+                          "Hello 👋",
+                          style: TextStyle(
+                            color: Colors.white.withOpacity(0.9),
+                            fontSize: 14,
+                          ),
                         ),
                         const SizedBox(height: 4),
                         Text(
                           displayName,
-                          style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
+                          style: const TextStyle(
+                            color: Colors.white,
+                            fontSize: 24,
+                            fontWeight: FontWeight.bold,
+                          ),
                         ),
                       ],
                     ),
                     CircleAvatar(
                       backgroundColor: Colors.white,
                       child: IconButton(
-                        icon: const Icon(Icons.notifications_none, color: Colors.black87),
+                        icon: const Icon(
+                          Icons.notifications_none,
+                          color: Colors.black87,
+                        ),
                         onPressed: () {
                           Navigator.push(
                             context,
-                            MaterialPageRoute(builder: (context) => const NotificationsScreen()),
+                            MaterialPageRoute(
+                              builder: (context) => const NotificationsScreen(),
+                            ),
                           );
                         },
                       ),
@@ -131,7 +152,11 @@ class DashboardHomeView extends StatelessWidget {
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(30),
                     boxShadow: [
-                      BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5)),
+                      BoxShadow(
+                        color: Colors.black.withOpacity(0.05),
+                        blurRadius: 10,
+                        offset: const Offset(0, 5),
+                      ),
                     ],
                   ),
                   child: const TextField(
@@ -150,10 +175,18 @@ class DashboardHomeView extends StatelessWidget {
                   child: Row(
                     children: [
                       _buildCategory(context, "House", "assets/house.png"),
-                      _buildCategory(context, "Electricity", "assets/electricity.png"),
-                      _buildCategory(context, "Handcraft", "assets/handcraft.png"),
+                      _buildCategory(
+                        context,
+                        "Electricity",
+                        "assets/electricity.png",
+                      ),
+                      _buildCategory(
+                        context,
+                        "Handcraft",
+                        "assets/handcraft.png",
+                      ),
                       _buildCategory(context, "Plumber", "assets/plumber.png"),
-                      _buildCategory(context, "More", "assets/more.png"),
+                      _buildCategory(context, "More", "../assets/more.png"),
                     ],
                   ),
                 ),
@@ -166,32 +199,74 @@ class DashboardHomeView extends StatelessWidget {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text("Near on you", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+                const Text(
+                  "Near on you",
+                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
+                ),
                 TextButton(
                   onPressed: () {
                     Navigator.push(
                       context,
-                      MaterialPageRoute(builder: (context) => const AllTechniciansScreen()),
+                      MaterialPageRoute(
+                        builder: (context) => const AllTechniciansScreen(),
+                      ),
                     );
                   },
-                  child: Text("View All", style: TextStyle(color: Colors.blue.shade700)),
+                  child: Text(
+                    "View All",
+                    style: TextStyle(color: Colors.blue.shade700),
+                  ),
                 ),
               ],
             ),
           ),
-          
+
           const SizedBox(height: 10),
 
           SizedBox(
-            height: 260, 
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              scrollDirection: Axis.horizontal,
-              children: [
-                _buildTechnicianCard(context, "Sample Technician 1", "Plumber", "4.9", "(200)", "\$34.00", "24 km", "assets/sample_technician_1.jpg"),
-                _buildTechnicianCard(context, "Sample Technician 2", "Home Care", "4.8", "(150)", "\$14.00", "12 km", "assets/sample_technician_2.jpg"),
-                _buildTechnicianCard(context, "Sample Technician 3", "Electricity", "4.7", "(80)", "\$40.00", "5 km", "assets/sample_technician_3.png"),
-              ],
+            height: 280,
+            child: StreamBuilder<QuerySnapshot>(
+              // Query the 'technicians' collection (optionally limit to 5-10 for the home screen)
+              stream: FirebaseFirestore.instance
+                  .collection('technicians')
+                  .limit(10)
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.hasError) {
+                  return Center(
+                    child: Text("Error loading technicians: ${snapshot.error}"),
+                  );
+                }
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return const Center(
+                    child: Text("No technicians found nearby."),
+                  );
+                }
+
+                var technicians = snapshot.data!.docs;
+                return ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  scrollDirection: Axis.horizontal,
+                  itemCount: technicians.length,
+                  itemBuilder: (context, index) {
+                    var technician = technicians[index];
+                    return _buildTechnicianCard(
+                      context,
+                      technician['userName'] ?? 'Unknown',
+                      technician['category'] ?? 'Unknown',
+                      technician['rating'] ?? '0.0',
+                      technician['reviews'] ?? '(0)',
+                      technician['price'] ?? '\$0.00',
+                      technician['location'] ?? 'Unknown',
+                      technician['profilePicture'] ??
+                          '', // Placeholder for profile picture URL, can be updated later
+                    );
+                  },
+                );
+              },
             ),
           ),
           const SizedBox(height: 20),
@@ -206,7 +281,9 @@ class DashboardHomeView extends StatelessWidget {
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(builder: (context) => CategoryScreen(categoryName: title)),
+          MaterialPageRoute(
+            builder: (context) => CategoryScreen(categoryName: title),
+          ),
         );
       },
       child: Padding(
@@ -220,19 +297,27 @@ class DashboardHomeView extends StatelessWidget {
                 color: Colors.white,
                 shape: BoxShape.circle,
                 boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5)),
+                  BoxShadow(
+                    color: Colors.black.withOpacity(0.05),
+                    blurRadius: 10,
+                    offset: const Offset(0, 5),
+                  ),
                 ],
               ),
               child: ClipOval(
                 child: Image.asset(
                   imagePath,
                   fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => const Icon(Icons.category, color: Colors.blue),
+                  errorBuilder: (context, error, stackTrace) =>
+                      const Icon(Icons.category, color: Colors.blue),
                 ),
               ),
             ),
             const SizedBox(height: 8),
-            Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
+            Text(
+              title,
+              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
+            ),
           ],
         ),
       ),
@@ -240,7 +325,16 @@ class DashboardHomeView extends StatelessWidget {
   }
 
   // Helper Widget for Technician Cards
-  Widget _buildTechnicianCard(BuildContext context, String name, String category, String rating, String reviews, String price, String distance, String imagePath) {
+  Widget _buildTechnicianCard(
+    BuildContext context,
+    String name,
+    String category,
+    String rating,
+    String reviews,
+    String price,
+    String distance,
+    String imagePath,
+  ) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
@@ -264,7 +358,11 @@ class DashboardHomeView extends StatelessWidget {
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5)),
+            BoxShadow(
+              color: Colors.black.withOpacity(0.05),
+              blurRadius: 10,
+              offset: const Offset(0, 5),
+            ),
           ],
         ),
         child: Column(
@@ -273,7 +371,9 @@ class DashboardHomeView extends StatelessWidget {
             Stack(
               children: [
                 ClipRRect(
-                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
+                  borderRadius: const BorderRadius.vertical(
+                    top: Radius.circular(16),
+                  ),
                   child: Container(
                     height: 120,
                     width: double.infinity,
@@ -281,7 +381,11 @@ class DashboardHomeView extends StatelessWidget {
                     child: Image.asset(
                       imagePath,
                       fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.person, size: 50, color: Colors.grey),
+                      errorBuilder: (context, error, stackTrace) => const Icon(
+                        Icons.person,
+                        size: 50,
+                        color: Colors.grey,
+                      ),
                     ),
                   ),
                 ),
@@ -291,7 +395,11 @@ class DashboardHomeView extends StatelessWidget {
                   child: CircleAvatar(
                     backgroundColor: Colors.white,
                     radius: 16,
-                    child: Icon(Icons.favorite_border, size: 18, color: Colors.grey.shade600),
+                    child: Icon(
+                      Icons.favorite_border,
+                      size: 18,
+                      color: Colors.grey.shade600,
+                    ),
                   ),
                 ),
               ],
@@ -304,19 +412,43 @@ class DashboardHomeView extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Expanded(child: Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), overflow: TextOverflow.ellipsis)),
+                      Expanded(
+                        child: Text(
+                          name,
+                          style: const TextStyle(
+                            fontWeight: FontWeight.bold,
+                            fontSize: 14,
+                          ),
+                          overflow: TextOverflow.ellipsis,
+                        ),
+                      ),
                       Row(
                         children: [
                           const Icon(Icons.star, size: 14, color: Colors.blue),
                           const SizedBox(width: 4),
-                          Text(rating, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
-                          Text(" $reviews", style: const TextStyle(color: Colors.grey, fontSize: 10)),
+                          Text(
+                            rating,
+                            style: const TextStyle(
+                              fontWeight: FontWeight.bold,
+                              fontSize: 12,
+                            ),
+                          ),
+                          Text(
+                            " $reviews",
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontSize: 10,
+                            ),
+                          ),
                         ],
                       ),
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Text(category, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                  Text(
+                    category,
+                    style: const TextStyle(color: Colors.grey, fontSize: 12),
+                  ),
                   const SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
@@ -324,16 +456,39 @@ class DashboardHomeView extends StatelessWidget {
                       Text.rich(
                         TextSpan(
                           children: [
-                            TextSpan(text: price, style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 14)),
-                            const TextSpan(text: " / Hr", style: TextStyle(color: Colors.grey, fontSize: 12)),
+                            TextSpan(
+                              text: price,
+                              style: const TextStyle(
+                                color: Colors.blue,
+                                fontWeight: FontWeight.bold,
+                                fontSize: 14,
+                              ),
+                            ),
+                            const TextSpan(
+                              text: " / Hr",
+                              style: TextStyle(
+                                color: Colors.grey,
+                                fontSize: 12,
+                              ),
+                            ),
                           ],
                         ),
                       ),
                       Row(
                         children: [
-                          const Icon(Icons.location_on_outlined, size: 14, color: Colors.grey),
+                          const Icon(
+                            Icons.location_on_outlined,
+                            size: 14,
+                            color: Colors.grey,
+                          ),
                           const SizedBox(width: 2),
-                          Text(distance, style: const TextStyle(color: Colors.grey, fontSize: 12)),
+                          Text(
+                            distance,
+                            style: const TextStyle(
+                              color: Colors.grey,
+                              fontSize: 12,
+                            ),
+                          ),
                         ],
                       ),
                     ],
