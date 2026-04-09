@@ -26,16 +26,53 @@ class _LoginScreenState extends State<LoginScreen> {
             email: _emailController.text.trim(),
             password: _passwordController.text.trim(),
           );
+      
+      // Store additional user info in Firestore and link them with uid
+      String uid = userCredential.user!.uid;
+      // setup a batch write to ensure atomicity
+      WriteBatch batch = FirebaseFirestore.instance.batch();
 
-      await FirebaseFirestore.instance
-          .collection('users')
-          .doc(userCredential.user!.uid)
-          .set({
-            'email': _emailController.text.trim(),
-            'role': _selectedRole,
-            'createdAt': FieldValue.serverTimestamp(),
-          });
+      // Create a reference to the user's document in Firestore
+      DocumentReference userRef = FirebaseFirestore.instance.collection('users').doc(uid);
+      batch.set(userRef, {
+        'email': _emailController.text.trim(),
+        'role': _selectedRole,
+        'createdAt': FieldValue.serverTimestamp(),
+      });
 
+      // If the user is a technician, also create a document in the technicians collection
+      if (_selectedRole == 'Technician') {
+        DocumentReference techRef = FirebaseFirestore.instance.collection('technicians').doc(uid);
+        batch.set(techRef, {
+          'email': _emailController.text.trim(),
+          'userName': '', // Placeholder for username, can be updated later
+          'category': '', // Placeholder for category, can be updated later
+          'profilePicture': '', // Placeholder for profile picture URL, can be updated later
+          'rating': 0.0, // Placeholder for rating, can be updated later
+          'location': '', // Placeholder for location, can be updated later
+          'contactInfo': '', // Placeholder for contact info, can be updated later
+          'totalBookings': 0, // Placeholder for total bookings, can be updated later
+          // Add any additional technician-specific fields here
+        });
+      } else {
+        // If the user is a customer, also create a document in the customers collection
+        DocumentReference customerRef = FirebaseFirestore.instance.collection('customers').doc(uid);
+        batch.set(customerRef, {
+          'email': _emailController.text.trim(),
+          'userName': '', // Placeholder for username, can be updated later
+          'profilePicture': '', // Placeholder for profile picture URL, can be updated later
+          'address': '', // Placeholder for address, can be updated later
+          'location': '', // Placeholder for location, can be updated later
+          'contactInfo': '', // Placeholder for contact info, can be updated later
+          'totalBookings': 0, // Placeholder for total bookings, can be updated later
+          // Add any additional customer-specific fields here
+        });
+      }
+
+      // Commit the batch write
+      await batch.commit();
+
+      // Show success message and navigate to HomeScreen
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(
           SnackBar(content: Text("Account created as $_selectedRole!")),
