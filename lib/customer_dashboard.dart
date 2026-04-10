@@ -1,16 +1,18 @@
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; // ADDED: To read live database
 import 'discover_screen.dart';
 import 'chat_screen.dart';
 import 'history_screen.dart';
-import 'profile_screen.dart';
+import 'profile_screen.dart'; 
 import 'notifications_screen.dart';
 import 'category_screen.dart';
-import 'technician_profile_screen.dart';
-import 'all_technicians_screen.dart';
+import 'technician_profile_screen.dart'; 
+import 'all_technicians_screen.dart';    
 
+// -----------------------------------------------------------------------------
+// MAIN DASHBOARD SKELETON
+// -----------------------------------------------------------------------------
 class CustomerDashboard extends StatefulWidget {
   const CustomerDashboard({super.key});
 
@@ -22,11 +24,11 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
   int _selectedIndex = 0;
 
   final List<Widget> _pages = [
-    const DashboardHomeView(),
+    const DashboardHomeView(), 
     const DiscoverScreen(),
     const ChatScreen(),
     const HistoryScreen(),
-    const ProfileScreen(),
+    const ProfileScreen(), 
   ];
 
   void _onItemTapped(int index) {
@@ -42,27 +44,24 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
       bottomNavigationBar: BottomNavigationBar(
         currentIndex: _selectedIndex,
         onTap: _onItemTapped,
-        type: BottomNavigationBarType.fixed,
+        type: BottomNavigationBarType.fixed, 
         selectedItemColor: Colors.blue.shade700,
         unselectedItemColor: Colors.grey,
         items: const [
           BottomNavigationBarItem(icon: Icon(Icons.home), label: "Home"),
           BottomNavigationBarItem(icon: Icon(Icons.search), label: "Discover"),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.chat_bubble_outline),
-            label: "Chat",
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.chat_bubble_outline), label: "Chat"),
           BottomNavigationBarItem(icon: Icon(Icons.history), label: "History"),
-          BottomNavigationBarItem(
-            icon: Icon(Icons.person_outline),
-            label: "Profile",
-          ),
+          BottomNavigationBarItem(icon: Icon(Icons.person_outline), label: "Profile"), 
         ],
       ),
     );
   }
 }
 
+// -----------------------------------------------------------------------------
+// HOME VIEW (Now connected to Firebase!)
+// -----------------------------------------------------------------------------
 class DashboardHomeView extends StatefulWidget {
   const DashboardHomeView({super.key});
 
@@ -72,13 +71,13 @@ class DashboardHomeView extends StatefulWidget {
 
 class _DashboardHomeViewState extends State<DashboardHomeView> {
   final TextEditingController _searchController = TextEditingController();
-  String _searchQuery = "";
+  String _searchQuery = ""; // Tracks what the user is typing
 
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
     String displayName = "User";
-
+    
     if (user != null && user.email != null) {
       displayName = user.email!.split('@')[0];
       if (displayName.isNotEmpty) {
@@ -90,6 +89,7 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
+          // TOP SECTION (Gradient, Greeting, Search)
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -99,12 +99,7 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
                 stops: const [0.0, 1.0],
               ),
             ),
-            padding: const EdgeInsets.only(
-              top: 60,
-              left: 20,
-              right: 20,
-              bottom: 20,
-            ),
+            padding: const EdgeInsets.only(top: 60, left: 20, right: 20, bottom: 20),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
@@ -115,72 +110,29 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-<<<<<<< HEAD
                         Text("Hello 👋", style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 14)),
                         const SizedBox(height: 4),
                         Text(displayName, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-=======
-                        Text(
-                          "Hello 👋",
-                          style: TextStyle(
-                            color: Colors.white.withOpacity(0.9),
-                            fontSize: 14,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Text(
-                          displayName,
-                          style: const TextStyle(
-                            color: Colors.white,
-                            fontSize: 24,
-                            fontWeight: FontWeight.bold,
-                          ),
-                        ),
->>>>>>> 80fa92d657238c333fc2d225fdd9dbddbdd6d4db
                       ],
                     ),
                     CircleAvatar(
                       backgroundColor: Colors.white,
                       child: IconButton(
-<<<<<<< HEAD
                         icon: const Icon(Icons.notifications_none, color: Colors.black87),
                         onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationsScreen())),
-=======
-                        icon: const Icon(
-                          Icons.notifications_none,
-                          color: Colors.black87,
-                        ),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(
-                              builder: (context) => const NotificationsScreen(),
-                            ),
-                          );
-                        },
->>>>>>> 80fa92d657238c333fc2d225fdd9dbddbdd6d4db
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 24),
 
+                // SEARCH BAR
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(30),
-<<<<<<< HEAD
                     boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5))],
-=======
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withOpacity(0.05),
-                        blurRadius: 10,
-                        offset: const Offset(0, 5),
-                      ),
-                    ],
->>>>>>> 80fa92d657238c333fc2d225fdd9dbddbdd6d4db
                   ),
                   child: TextField(
                     controller: _searchController,
@@ -199,31 +151,16 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
                 ),
                 const SizedBox(height: 32),
 
+                // CATEGORIES
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-<<<<<<< HEAD
                       _buildCategory(context, "House", "assets/sample_1.png"),
                       _buildCategory(context, "Electricity", "assets/sample_2.png"),
                       _buildCategory(context, "Handcraft", "assets/sample_3.png"),
                       _buildCategory(context, "Plumber", "assets/sample_4.png"),
                       _buildCategory(context, "More", "assets/sample_5.png"),
-=======
-                      _buildCategory(context, "House", "assets/house.png"),
-                      _buildCategory(
-                        context,
-                        "Electricity",
-                        "assets/electricity.png",
-                      ),
-                      _buildCategory(
-                        context,
-                        "Handcraft",
-                        "assets/handcraft.png",
-                      ),
-                      _buildCategory(context, "Plumber", "assets/plumber.png"),
-                      _buildCategory(context, "More", "../assets/more.png"),
->>>>>>> 80fa92d657238c333fc2d225fdd9dbddbdd6d4db
                     ],
                   ),
                 ),
@@ -236,39 +173,22 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
             child: Row(
               mainAxisAlignment: MainAxisAlignment.spaceBetween,
               children: [
-                const Text(
-                  "Near on you",
-                  style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold),
-                ),
+                const Text("Near on you", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 TextButton(
-<<<<<<< HEAD
                   onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const AllTechniciansScreen())),
                   child: Text("View All", style: TextStyle(color: Colors.blue.shade700)),
-=======
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(
-                        builder: (context) => const AllTechniciansScreen(),
-                      ),
-                    );
-                  },
-                  child: Text(
-                    "View All",
-                    style: TextStyle(color: Colors.blue.shade700),
-                  ),
->>>>>>> 80fa92d657238c333fc2d225fdd9dbddbdd6d4db
                 ),
               ],
             ),
           ),
-
+          
           const SizedBox(height: 10),
 
+          // THE MAGIC FIREBASE LIST
           SizedBox(
-<<<<<<< HEAD
             height: 260, 
             child: StreamBuilder<QuerySnapshot>(
+              // 1. Fetch only Approved Technicians
               stream: FirebaseFirestore.instance
                   .collection('users')
                   .where('role', isEqualTo: 'Technician')
@@ -285,11 +205,13 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
 
                 var allDocs = snapshot.data!.docs;
 
+                // 2. Filter the list locally if the user typed in the Search Bar
                 if (_searchQuery.isNotEmpty) {
                   allDocs = allDocs.where((doc) {
                     var data = doc.data() as Map<String, dynamic>;
                     String fullName = "${data['firstName']} ${data['lastName']}".toLowerCase();
                     
+                    // Check if they have the specific service category
                     List<dynamic> categories = data['searchCategories'] ?? [];
                     bool matchesCategory = categories.any((cat) => cat.toString().toLowerCase().contains(_searchQuery));
                     
@@ -301,6 +223,7 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
                   return const Center(child: Text("No matches found.", style: TextStyle(color: Colors.grey)));
                 }
 
+                // 3. Build the UI Cards
                 return ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   scrollDirection: Axis.horizontal,
@@ -308,9 +231,11 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
                   itemBuilder: (context, index) {
                     var data = allDocs[index].data() as Map<String, dynamic>;
                     
+                    // Format data gracefully (in case a field is missing)
                     String name = "${data['firstName'] ?? 'Tech'} ${data['lastName'] ?? ''}".trim();
                     List<dynamic> services = data['services'] ?? [];
                     
+                    // If they have services, grab the first one to show on the card
                     String displayCategory = services.isNotEmpty ? services[0]['name'] : "General Services";
                     String displayPrice = services.isNotEmpty ? "\$${services[0]['rate']}" : "\$0.00";
 
@@ -318,52 +243,11 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
                       context, 
                       name, 
                       displayCategory, 
-                      "4.9",
+                      "4.9", // Placeholder for future ratings
                       "(New)", 
                       displayPrice, 
-                      "Nearby",
-                      "assets/sample_6.png"
-=======
-            height: 280,
-            child: StreamBuilder<QuerySnapshot>(
-              // Query the 'technicians' collection (optionally limit to 5-10 for the home screen)
-              stream: FirebaseFirestore.instance
-                  .collection('technicians')
-                  .limit(10)
-                  .snapshots(),
-              builder: (context, snapshot) {
-                if (snapshot.hasError) {
-                  return Center(
-                    child: Text("Error loading technicians: ${snapshot.error}"),
-                  );
-                }
-                if (snapshot.connectionState == ConnectionState.waiting) {
-                  return const Center(child: CircularProgressIndicator());
-                }
-                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                  return const Center(
-                    child: Text("No technicians found nearby."),
-                  );
-                }
-
-                var technicians = snapshot.data!.docs;
-                return ListView.builder(
-                  padding: const EdgeInsets.symmetric(horizontal: 20),
-                  scrollDirection: Axis.horizontal,
-                  itemCount: technicians.length,
-                  itemBuilder: (context, index) {
-                    var technician = technicians[index];
-                    return _buildTechnicianCard(
-                      context,
-                      technician['userName'] ?? 'Unknown',
-                      technician['category'] ?? 'Unknown',
-                      technician['rating'] ?? '0.0',
-                      technician['reviews'] ?? '(0)',
-                      technician['price'] ?? '\$0.00',
-                      technician['location'] ?? 'Unknown',
-                      technician['profilePicture'] ??
-                          '', // Placeholder for profile picture URL, can be updated later
->>>>>>> 80fa92d657238c333fc2d225fdd9dbddbdd6d4db
+                      "Nearby", // Placeholder for future GPS
+                      "assets/sample_6.png" // Placeholder avatar
                     );
                   },
                 );
@@ -378,18 +262,7 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
 
   Widget _buildCategory(BuildContext context, String title, String imagePath) {
     return GestureDetector(
-<<<<<<< HEAD
       onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => CategoryScreen(categoryName: title))),
-=======
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => CategoryScreen(categoryName: title),
-          ),
-        );
-      },
->>>>>>> 80fa92d657238c333fc2d225fdd9dbddbdd6d4db
       child: Padding(
         padding: const EdgeInsets.only(right: 24.0),
         child: Column(
@@ -400,54 +273,19 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 shape: BoxShape.circle,
-<<<<<<< HEAD
                 boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5))],
-=======
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(0.05),
-                    blurRadius: 10,
-                    offset: const Offset(0, 5),
-                  ),
-                ],
-              ),
-              child: ClipOval(
-                child: Image.asset(
-                  imagePath,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) =>
-                      const Icon(Icons.category, color: Colors.blue),
-                ),
->>>>>>> 80fa92d657238c333fc2d225fdd9dbddbdd6d4db
               ),
               child: ClipOval(child: Image.asset(imagePath, fit: BoxFit.cover, errorBuilder: (c, e, s) => const Icon(Icons.category, color: Colors.blue))),
             ),
             const SizedBox(height: 8),
-            Text(
-              title,
-              style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500),
-            ),
+            Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
           ],
         ),
       ),
     );
   }
 
-<<<<<<< HEAD
   Widget _buildTechnicianCard(BuildContext context, String name, String category, String rating, String reviews, String price, String distance, String imagePath) {
-=======
-  // Helper Widget for Technician Cards
-  Widget _buildTechnicianCard(
-    BuildContext context,
-    String name,
-    String category,
-    String rating,
-    String reviews,
-    String price,
-    String distance,
-    String imagePath,
-  ) {
->>>>>>> 80fa92d657238c333fc2d225fdd9dbddbdd6d4db
     return GestureDetector(
       onTap: () => Navigator.push(context, MaterialPageRoute(
         builder: (context) => TechnicianProfileScreen(name: name, category: category, rating: rating, reviews: reviews, price: price, imagePath: imagePath),
@@ -458,17 +296,7 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-<<<<<<< HEAD
           boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5))],
-=======
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withOpacity(0.05),
-              blurRadius: 10,
-              offset: const Offset(0, 5),
-            ),
-          ],
->>>>>>> 80fa92d657238c333fc2d225fdd9dbddbdd6d4db
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -476,45 +304,17 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
             Stack(
               children: [
                 ClipRRect(
-                  borderRadius: const BorderRadius.vertical(
-                    top: Radius.circular(16),
-                  ),
+                  borderRadius: const BorderRadius.vertical(top: Radius.circular(16)),
                   child: Container(
                     height: 120,
                     width: double.infinity,
                     color: Colors.grey.shade200,
-<<<<<<< HEAD
                     child: Image.asset(imagePath, fit: BoxFit.cover, errorBuilder: (c, e, s) => const Icon(Icons.person, size: 50, color: Colors.grey)),
                   ),
                 ),
                 Positioned(
                   top: 8, right: 8,
                   child: CircleAvatar(backgroundColor: Colors.white, radius: 16, child: Icon(Icons.favorite_border, size: 18, color: Colors.grey.shade600)),
-=======
-                    child: Image.asset(
-                      imagePath,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => const Icon(
-                        Icons.person,
-                        size: 50,
-                        color: Colors.grey,
-                      ),
-                    ),
-                  ),
-                ),
-                Positioned(
-                  top: 8,
-                  right: 8,
-                  child: CircleAvatar(
-                    backgroundColor: Colors.white,
-                    radius: 16,
-                    child: Icon(
-                      Icons.favorite_border,
-                      size: 18,
-                      color: Colors.grey.shade600,
-                    ),
-                  ),
->>>>>>> 80fa92d657238c333fc2d225fdd9dbddbdd6d4db
                 ),
               ],
             ),
@@ -526,87 +326,29 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Expanded(
-                        child: Text(
-                          name,
-                          style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            fontSize: 14,
-                          ),
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
+                      Expanded(child: Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), overflow: TextOverflow.ellipsis)),
                       Row(
                         children: [
                           const Icon(Icons.star, size: 14, color: Colors.blue),
                           const SizedBox(width: 4),
-                          Text(
-                            rating,
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              fontSize: 12,
-                            ),
-                          ),
-                          Text(
-                            " $reviews",
-                            style: const TextStyle(
-                              color: Colors.grey,
-                              fontSize: 10,
-                            ),
-                          ),
+                          Text(rating, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
+                          Text(" $reviews", style: const TextStyle(color: Colors.grey, fontSize: 10)),
                         ],
                       ),
                     ],
                   ),
                   const SizedBox(height: 4),
-                  Text(
-                    category,
-                    style: const TextStyle(color: Colors.grey, fontSize: 12),
-                  ),
+                  Text(category, style: const TextStyle(color: Colors.grey, fontSize: 12)),
                   const SizedBox(height: 12),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-<<<<<<< HEAD
                       Text.rich(TextSpan(children: [TextSpan(text: price, style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 14)), const TextSpan(text: " / Hr", style: TextStyle(color: Colors.grey, fontSize: 12))])),
-=======
-                      Text.rich(
-                        TextSpan(
-                          children: [
-                            TextSpan(
-                              text: price,
-                              style: const TextStyle(
-                                color: Colors.blue,
-                                fontWeight: FontWeight.bold,
-                                fontSize: 14,
-                              ),
-                            ),
-                            const TextSpan(
-                              text: " / Hr",
-                              style: TextStyle(
-                                color: Colors.grey,
-                                fontSize: 12,
-                              ),
-                            ),
-                          ],
-                        ),
-                      ),
->>>>>>> 80fa92d657238c333fc2d225fdd9dbddbdd6d4db
                       Row(
                         children: [
-                          const Icon(
-                            Icons.location_on_outlined,
-                            size: 14,
-                            color: Colors.grey,
-                          ),
+                          const Icon(Icons.location_on_outlined, size: 14, color: Colors.grey),
                           const SizedBox(width: 2),
-                          Text(
-                            distance,
-                            style: const TextStyle(
-                              color: Colors.grey,
-                              fontSize: 12,
-                            ),
-                          ),
+                          Text(distance, style: const TextStyle(color: Colors.grey, fontSize: 12)),
                         ],
                       ),
                     ],
