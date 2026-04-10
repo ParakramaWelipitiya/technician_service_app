@@ -1,160 +1,169 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
 import 'technician_profile_screen.dart';
+import 'booking_screen.dart'; // ADDED: Import the new screen
 
 class CategoryScreen extends StatelessWidget {
   final String categoryName;
 
   const CategoryScreen({super.key, required this.categoryName});
 
-  void _showBookingPopup(BuildContext context, String techName, String price) {
-    showModalBottomSheet(
-      context: context,
-      isScrollControlled: true, // Allows the popup to be taller
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (context) {
-        return Padding(
-          padding: EdgeInsets.only(
-            bottom: MediaQuery.of(context).viewInsets.bottom,
-            left: 20,
-            right: 20,
-            top: 20,
-          ),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text("Book $techName", style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-                  IconButton(
-                    icon: const Icon(Icons.close),
-                    onPressed: () => Navigator.pop(context),
-                  ),
-                ],
-              ),
-              Text("Category: $categoryName • Rate: $price/Hr", style: const TextStyle(color: Colors.grey)),
-              const SizedBox(height: 20),
-              
-              const Text("Describe your issue:", style: TextStyle(fontWeight: FontWeight.bold)),
-              const SizedBox(height: 8),
-              const TextField(
-                maxLines: 3,
-                decoration: InputDecoration(
-                  hintText: "E.g., The pipe is leaking...",
-                  border: OutlineInputBorder(),
-                ),
-              ),
-              const SizedBox(height: 16),
-              
-              SwitchListTile(
-                contentPadding: EdgeInsets.zero,
-                title: const Text("Emergency (+\$50)"),
-                subtitle: const Text("Need them immediately?"),
-                value: false, 
-                activeColor: Colors.red,
-                onChanged: (val) {},
-              ),
-              
-              const SizedBox(height: 20),
-              ElevatedButton(
-                onPressed: () {
-                  Navigator.pop(context);
-                  ScaffoldMessenger.of(context).showSnackBar(
-                    SnackBar(content: Text("Booking request sent to $techName!")),
-                  );
-                },
-                style: ElevatedButton.styleFrom(
-                  minimumSize: const Size.fromHeight(50),
-                  backgroundColor: Colors.blue,
-                  foregroundColor: Colors.white,
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                ),
-                child: const Text("Confirm Booking"),
-              ),
-              const SizedBox(height: 20),
-            ],
-          ),
-        );
-      },
-    );
-  }
-
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        title: Text("$categoryName Available"),
-        backgroundColor: Colors.blue,
+        title: Text("$categoryName Available", style: const TextStyle(fontWeight: FontWeight.bold)),
+        backgroundColor: Colors.blue.shade800,
         foregroundColor: Colors.white,
+        elevation: 0,
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          // UPDATED: Added imagePath to the dummy data
-          _buildTechListTile(context, "Syeila Onstefen", "4.9", "(200)", "\$34.00", "2.4 km", "assets/sample_6.png"),
-          _buildTechListTile(context, "John Doe", "4.7", "(85)", "\$40.00", "5.1 km", "assets/sample_8.png"),
-          _buildTechListTile(context, "Mike Smith", "4.5", "(42)", "\$30.00", "8.0 km", "assets/sample_9.png"),
-        ],
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance
+            .collection('users')
+            .where('role', isEqualTo: 'Technician')
+            .where('isApproved', isEqualTo: true)
+            .where('searchCategories', arrayContains: categoryName) 
+            .snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) {
+            return const Center(child: CircularProgressIndicator());
+          }
+
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.search_off, size: 64, color: Colors.grey.shade300),
+                  const SizedBox(height: 16),
+                  Text("No $categoryName technicians found yet.", style: TextStyle(color: Colors.grey.shade600, fontSize: 16)),
+                ],
+              ),
+            );
+          }
+
+          var allDocs = snapshot.data!.docs;
+
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: allDocs.length,
+            itemBuilder: (context, index) {
+              String techId = allDocs[index].id; 
+              var data = allDocs[index].data() as Map<String, dynamic>;
+              
+              String name = "${data['firstName'] ?? 'Tech'} ${data['lastName'] ?? ''}".trim();
+              
+              List<dynamic> services = data['services'] ?? [];
+              String specificPrice = "\$0.00";
+              for (var svc in services) {
+                if (svc['name'] == categoryName) {
+                  specificPrice = "\$${svc['rate']}";
+                  break; 
+                }
+              }
+
+              return _buildTechListTile(
+                context, techId, name, "4.9", "(New)", specificPrice, "Nearby", "assets/sample_6.png" 
+              );
+            },
+          );
+        },
       ),
     );
   }
 
-  Widget _buildTechListTile(BuildContext context, String name, String rating, String reviews, String price, String distance, String imagePath) {
+Widget _buildTechListTile(BuildContext context, String techId, String name, String rating, String reviews, String price, String distance, String imagePath) {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
-      child: ListTile(
-        contentPadding: const EdgeInsets.all(16),
-        // THE FIX: Adding onTap to the ListTile to navigate to the Profile Screen
+      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
+      elevation: 2,
+      shadowColor: Colors.black.withOpacity(0.05),
+      child: InkWell(
         onTap: () {
           Navigator.push(
             context,
             MaterialPageRoute(
               builder: (context) => TechnicianProfileScreen(
-                name: name,
-                category: categoryName, // We pull this from the screen's main variable
-                rating: rating,
-                reviews: reviews,
-                price: price,
-                imagePath: imagePath,
+                name: name, category: categoryName, rating: rating, reviews: reviews, price: price, imagePath: imagePath,
               ),
             ),
           );
         },
-        leading: ClipRRect(
-          borderRadius: BorderRadius.circular(8),
-          child: Container(
-            width: 60,
-            height: 60,
-            color: Colors.grey.shade200,
-            child: Image.asset(
-              imagePath,
-              fit: BoxFit.cover,
-              errorBuilder: (context, error, stackTrace) => const Icon(Icons.person, color: Colors.grey),
-            ),
+        borderRadius: BorderRadius.circular(16),
+        child: Padding(
+          padding: const EdgeInsets.all(16),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              ClipRRect(
+                borderRadius: BorderRadius.circular(12),
+                child: Container(
+                  width: 65, height: 65,
+                  color: Colors.blue.shade50,
+                  child: Image.asset(imagePath, fit: BoxFit.cover, errorBuilder: (c, e, s) => Icon(Icons.person, color: Colors.blue.shade300, size: 32)),
+                ),
+              ),
+              const SizedBox(width: 16),
+
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16), maxLines: 1, overflow: TextOverflow.ellipsis),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        const Icon(Icons.star, color: Colors.amber, size: 16),
+                        const SizedBox(width: 4),
+                        Text("$rating ", style: const TextStyle(fontWeight: FontWeight.bold)),
+                        Text(reviews, style: TextStyle(color: Colors.grey.shade600)),
+                      ],
+                    ),
+                    const SizedBox(height: 6),
+                    Row(
+                      children: [
+                        Icon(Icons.location_on, size: 14, color: Colors.grey.shade500),
+                        const SizedBox(width: 4),
+                        Text("$distance away", style: TextStyle(color: Colors.grey.shade600)),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+
+              Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                children: [
+                  Text("$price/Hr", style: TextStyle(color: Colors.blue.shade800, fontWeight: FontWeight.bold, fontSize: 15)),
+                  const SizedBox(height: 12),
+                  ElevatedButton(
+                    onPressed: () {
+                      Navigator.push(
+                        context,
+                        MaterialPageRoute(
+                          builder: (context) => BookingScreen(
+                            techId: techId,
+                            techName: name,
+                            categoryName: categoryName,
+                            price: price,
+                          ),
+                        ),
+                      );
+                    },
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: Colors.blue.shade700, 
+                      foregroundColor: Colors.white,
+                      padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 0),
+                      minimumSize: const Size(60, 32),
+                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(8)),
+                    ),
+                    child: const Text("Book", style: TextStyle(fontSize: 12, fontWeight: FontWeight.bold)),
+                  ),
+                ],
+              ),
+            ],
           ),
-        ),
-        title: Text(name, style: const TextStyle(fontWeight: FontWeight.bold)),
-        subtitle: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            const SizedBox(height: 4),
-            Row(
-              children: [
-                const Icon(Icons.star, color: Colors.amber, size: 16),
-                Text(" $rating $reviews"),
-              ],
-            ),
-            const SizedBox(height: 4),
-            Text("$price/Hr • $distance away", style: const TextStyle(color: Colors.grey)),
-          ],
-        ),
-        trailing: ElevatedButton(
-          onPressed: () => _showBookingPopup(context, name, price),
-          style: ElevatedButton.styleFrom(backgroundColor: Colors.blue, foregroundColor: Colors.white),
-          child: const Text("Book"),
         ),
       ),
     );
