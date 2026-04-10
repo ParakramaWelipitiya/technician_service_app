@@ -60,13 +60,12 @@ class _LoginScreenState extends State<LoginScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       body: Container(
-        // DASHBOARD MATCHING GRADIENT
         decoration: BoxDecoration(
           gradient: LinearGradient(
             begin: Alignment.topCenter,
             end: Alignment.bottomCenter,
             colors: [Colors.blue.shade300, Colors.white],
-            stops: const [0.0, 0.4], // Fades to white by the middle of the screen
+            stops: const [0.0, 0.4],
           ),
         ),
         child: SafeArea(
@@ -136,7 +135,6 @@ class _LoginScreenState extends State<LoginScreen> {
     );
   }
 
-  // Helper for beautiful white input fields
   Widget _buildTextField(String label, IconData icon, TextEditingController controller, {bool isPassword = false}) {
     return TextFormField(
       controller: controller,

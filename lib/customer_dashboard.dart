@@ -10,9 +10,6 @@ import 'category_screen.dart';
 import 'technician_profile_screen.dart'; 
 import 'all_technicians_screen.dart';    
 
-// -----------------------------------------------------------------------------
-// MAIN DASHBOARD SKELETON
-// -----------------------------------------------------------------------------
 class CustomerDashboard extends StatefulWidget {
   const CustomerDashboard({super.key});
 
@@ -59,9 +56,6 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
   }
 }
 
-// -----------------------------------------------------------------------------
-// HOME VIEW (Now connected to Firebase!)
-// -----------------------------------------------------------------------------
 class DashboardHomeView extends StatefulWidget {
   const DashboardHomeView({super.key});
 
@@ -89,7 +83,6 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          // TOP SECTION (Gradient, Greeting, Search)
           Container(
             decoration: BoxDecoration(
               gradient: LinearGradient(
@@ -126,7 +119,6 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
                 ),
                 const SizedBox(height: 24),
 
-                // SEARCH BAR
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
@@ -151,7 +143,6 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
                 ),
                 const SizedBox(height: 32),
 
-                // CATEGORIES
                 SingleChildScrollView(
                   scrollDirection: Axis.horizontal,
                   child: Row(
@@ -184,11 +175,9 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
           
           const SizedBox(height: 10),
 
-          // THE MAGIC FIREBASE LIST
           SizedBox(
             height: 260, 
             child: StreamBuilder<QuerySnapshot>(
-              // 1. Fetch only Approved Technicians
               stream: FirebaseFirestore.instance
                   .collection('users')
                   .where('role', isEqualTo: 'Technician')
@@ -205,13 +194,11 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
 
                 var allDocs = snapshot.data!.docs;
 
-                // 2. Filter the list locally if the user typed in the Search Bar
                 if (_searchQuery.isNotEmpty) {
                   allDocs = allDocs.where((doc) {
                     var data = doc.data() as Map<String, dynamic>;
                     String fullName = "${data['firstName']} ${data['lastName']}".toLowerCase();
                     
-                    // Check if they have the specific service category
                     List<dynamic> categories = data['searchCategories'] ?? [];
                     bool matchesCategory = categories.any((cat) => cat.toString().toLowerCase().contains(_searchQuery));
                     
@@ -223,7 +210,6 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
                   return const Center(child: Text("No matches found.", style: TextStyle(color: Colors.grey)));
                 }
 
-                // 3. Build the UI Cards
                 return ListView.builder(
                   padding: const EdgeInsets.symmetric(horizontal: 20),
                   scrollDirection: Axis.horizontal,
@@ -231,11 +217,9 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
                   itemBuilder: (context, index) {
                     var data = allDocs[index].data() as Map<String, dynamic>;
                     
-                    // Format data gracefully (in case a field is missing)
                     String name = "${data['firstName'] ?? 'Tech'} ${data['lastName'] ?? ''}".trim();
                     List<dynamic> services = data['services'] ?? [];
                     
-                    // If they have services, grab the first one to show on the card
                     String displayCategory = services.isNotEmpty ? services[0]['name'] : "General Services";
                     String displayPrice = services.isNotEmpty ? "\$${services[0]['rate']}" : "\$0.00";
 
@@ -243,11 +227,11 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
                       context, 
                       name, 
                       displayCategory, 
-                      "4.9", // Placeholder for future ratings
+                      "4.9",
                       "(New)", 
                       displayPrice, 
-                      "Nearby", // Placeholder for future GPS
-                      "assets/sample_6.png" // Placeholder avatar
+                      "Nearby",
+                      "assets/sample_6.png"
                     );
                   },
                 );
