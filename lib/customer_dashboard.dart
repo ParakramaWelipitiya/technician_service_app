@@ -1,5 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:cloud_firestore/cloud_firestore.dart'; // ADDED: To read live database
 import 'discover_screen.dart';
 import 'chat_screen.dart';
 import 'history_screen.dart';
@@ -55,8 +56,16 @@ class _CustomerDashboardState extends State<CustomerDashboard> {
   }
 }
 
-class DashboardHomeView extends StatelessWidget {
+class DashboardHomeView extends StatefulWidget {
   const DashboardHomeView({super.key});
+
+  @override
+  State<DashboardHomeView> createState() => _DashboardHomeViewState();
+}
+
+class _DashboardHomeViewState extends State<DashboardHomeView> {
+  final TextEditingController _searchController = TextEditingController();
+  String _searchQuery = "";
 
   @override
   Widget build(BuildContext context) {
@@ -79,10 +88,7 @@ class DashboardHomeView extends StatelessWidget {
               gradient: LinearGradient(
                 begin: Alignment.topCenter,
                 end: Alignment.bottomCenter,
-                colors: [
-                  Colors.blue.shade300,
-                  Colors.white,
-                ],
+                colors: [Colors.blue.shade300, Colors.white],
                 stops: const [0.0, 1.0],
               ),
             ),
@@ -97,47 +103,39 @@ class DashboardHomeView extends StatelessWidget {
                     Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
-                        Text(
-                          "Hello 👋", 
-                          style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 14)
-                        ),
+                        Text("Hello 👋", style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 14)),
                         const SizedBox(height: 4),
-                        Text(
-                          displayName,
-                          style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold),
-                        ),
+                        Text(displayName, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
                       ],
                     ),
                     CircleAvatar(
                       backgroundColor: Colors.white,
                       child: IconButton(
                         icon: const Icon(Icons.notifications_none, color: Colors.black87),
-                        onPressed: () {
-                          Navigator.push(
-                            context,
-                            MaterialPageRoute(builder: (context) => const NotificationsScreen()),
-                          );
-                        },
+                        onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const NotificationsScreen())),
                       ),
                     ),
                   ],
                 ),
                 const SizedBox(height: 24),
 
-                // Search Bar
                 Container(
                   padding: const EdgeInsets.symmetric(horizontal: 16),
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(30),
-                    boxShadow: [
-                      BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5)),
-                    ],
+                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5))],
                   ),
-                  child: const TextField(
-                    decoration: InputDecoration(
+                  child: TextField(
+                    controller: _searchController,
+                    onChanged: (value) {
+                      setState(() {
+                        _searchQuery = value.toLowerCase(); // Updates screen as you type
+                      });
+                    },
+                    decoration: const InputDecoration(
                       icon: Icon(Icons.search, color: Colors.grey),
-                      hintText: "Search service here...",
+                      hintText: "Search name or service...",
                       hintStyle: TextStyle(color: Colors.grey),
                       border: InputBorder.none,
                     ),
@@ -149,11 +147,11 @@ class DashboardHomeView extends StatelessWidget {
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      _buildCategory(context, "House", "assets/house.png"),
-                      _buildCategory(context, "Electricity", "assets/electricity.png"),
-                      _buildCategory(context, "Handcraft", "assets/handcraft.png"),
-                      _buildCategory(context, "Plumber", "assets/plumber.png"),
-                      _buildCategory(context, "More", "assets/more.png"),
+                      _buildCategory(context, "House", "assets/sample_1.png"),
+                      _buildCategory(context, "Electricity", "assets/sample_2.png"),
+                      _buildCategory(context, "Handcraft", "assets/sample_3.png"),
+                      _buildCategory(context, "Plumber", "assets/sample_4.png"),
+                      _buildCategory(context, "More", "assets/sample_5.png"),
                     ],
                   ),
                 ),
@@ -168,12 +166,7 @@ class DashboardHomeView extends StatelessWidget {
               children: [
                 const Text("Near on you", style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
                 TextButton(
-                  onPressed: () {
-                    Navigator.push(
-                      context,
-                      MaterialPageRoute(builder: (context) => const AllTechniciansScreen()),
-                    );
-                  },
+                  onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const AllTechniciansScreen())),
                   child: Text("View All", style: TextStyle(color: Colors.blue.shade700)),
                 ),
               ],
@@ -184,14 +177,65 @@ class DashboardHomeView extends StatelessWidget {
 
           SizedBox(
             height: 260, 
-            child: ListView(
-              padding: const EdgeInsets.symmetric(horizontal: 20),
-              scrollDirection: Axis.horizontal,
-              children: [
-                _buildTechnicianCard(context, "Sample Technician 1", "Plumber", "4.9", "(200)", "\$34.00", "24 km", "assets/sample_technician_1.jpg"),
-                _buildTechnicianCard(context, "Sample Technician 2", "Home Care", "4.8", "(150)", "\$14.00", "12 km", "assets/sample_technician_2.jpg"),
-                _buildTechnicianCard(context, "Sample Technician 3", "Electricity", "4.7", "(80)", "\$40.00", "5 km", "assets/sample_technician_3.png"),
-              ],
+            child: StreamBuilder<QuerySnapshot>(
+              stream: FirebaseFirestore.instance
+                  .collection('users')
+                  .where('role', isEqualTo: 'Technician')
+                  .where('isApproved', isEqualTo: true) 
+                  .snapshots(),
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const Center(child: CircularProgressIndicator());
+                }
+
+                if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                  return const Center(child: Text("No technicians available right now.", style: TextStyle(color: Colors.grey)));
+                }
+
+                var allDocs = snapshot.data!.docs;
+
+                if (_searchQuery.isNotEmpty) {
+                  allDocs = allDocs.where((doc) {
+                    var data = doc.data() as Map<String, dynamic>;
+                    String fullName = "${data['firstName']} ${data['lastName']}".toLowerCase();
+                    
+                    List<dynamic> categories = data['searchCategories'] ?? [];
+                    bool matchesCategory = categories.any((cat) => cat.toString().toLowerCase().contains(_searchQuery));
+                    
+                    return fullName.contains(_searchQuery) || matchesCategory;
+                  }).toList();
+                }
+
+                if (allDocs.isEmpty) {
+                  return const Center(child: Text("No matches found.", style: TextStyle(color: Colors.grey)));
+                }
+
+                return ListView.builder(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  scrollDirection: Axis.horizontal,
+                  itemCount: allDocs.length,
+                  itemBuilder: (context, index) {
+                    var data = allDocs[index].data() as Map<String, dynamic>;
+                    
+                    String name = "${data['firstName'] ?? 'Tech'} ${data['lastName'] ?? ''}".trim();
+                    List<dynamic> services = data['services'] ?? [];
+                    
+                    String displayCategory = services.isNotEmpty ? services[0]['name'] : "General Services";
+                    String displayPrice = services.isNotEmpty ? "\$${services[0]['rate']}" : "\$0.00";
+
+                    return _buildTechnicianCard(
+                      context, 
+                      name, 
+                      displayCategory, 
+                      "4.9",
+                      "(New)", 
+                      displayPrice, 
+                      "Nearby",
+                      "assets/sample_6.png"
+                    );
+                  },
+                );
+              },
             ),
           ),
           const SizedBox(height: 20),
@@ -200,15 +244,9 @@ class DashboardHomeView extends StatelessWidget {
     );
   }
 
-  // Helper Widget for Categories
   Widget _buildCategory(BuildContext context, String title, String imagePath) {
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(builder: (context) => CategoryScreen(categoryName: title)),
-        );
-      },
+      onTap: () => Navigator.push(context, MaterialPageRoute(builder: (context) => CategoryScreen(categoryName: title))),
       child: Padding(
         padding: const EdgeInsets.only(right: 24.0),
         child: Column(
@@ -219,17 +257,9 @@ class DashboardHomeView extends StatelessWidget {
               decoration: BoxDecoration(
                 color: Colors.white,
                 shape: BoxShape.circle,
-                boxShadow: [
-                  BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5)),
-                ],
+                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5))],
               ),
-              child: ClipOval(
-                child: Image.asset(
-                  imagePath,
-                  fit: BoxFit.cover,
-                  errorBuilder: (context, error, stackTrace) => const Icon(Icons.category, color: Colors.blue),
-                ),
-              ),
+              child: ClipOval(child: Image.asset(imagePath, fit: BoxFit.cover, errorBuilder: (c, e, s) => const Icon(Icons.category, color: Colors.blue))),
             ),
             const SizedBox(height: 8),
             Text(title, style: const TextStyle(fontSize: 12, fontWeight: FontWeight.w500)),
@@ -239,33 +269,18 @@ class DashboardHomeView extends StatelessWidget {
     );
   }
 
-  // Helper Widget for Technician Cards
   Widget _buildTechnicianCard(BuildContext context, String name, String category, String rating, String reviews, String price, String distance, String imagePath) {
     return GestureDetector(
-      onTap: () {
-        Navigator.push(
-          context,
-          MaterialPageRoute(
-            builder: (context) => TechnicianProfileScreen(
-              name: name,
-              category: category,
-              rating: rating,
-              reviews: reviews,
-              price: price,
-              imagePath: imagePath,
-            ),
-          ),
-        );
-      },
+      onTap: () => Navigator.push(context, MaterialPageRoute(
+        builder: (context) => TechnicianProfileScreen(name: name, category: category, rating: rating, reviews: reviews, price: price, imagePath: imagePath),
+      )),
       child: Container(
         width: 200,
         margin: const EdgeInsets.only(right: 16),
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5)),
-          ],
+          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5))],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -278,21 +293,12 @@ class DashboardHomeView extends StatelessWidget {
                     height: 120,
                     width: double.infinity,
                     color: Colors.grey.shade200,
-                    child: Image.asset(
-                      imagePath,
-                      fit: BoxFit.cover,
-                      errorBuilder: (context, error, stackTrace) => const Icon(Icons.person, size: 50, color: Colors.grey),
-                    ),
+                    child: Image.asset(imagePath, fit: BoxFit.cover, errorBuilder: (c, e, s) => const Icon(Icons.person, size: 50, color: Colors.grey)),
                   ),
                 ),
                 Positioned(
-                  top: 8,
-                  right: 8,
-                  child: CircleAvatar(
-                    backgroundColor: Colors.white,
-                    radius: 16,
-                    child: Icon(Icons.favorite_border, size: 18, color: Colors.grey.shade600),
-                  ),
+                  top: 8, right: 8,
+                  child: CircleAvatar(backgroundColor: Colors.white, radius: 16, child: Icon(Icons.favorite_border, size: 18, color: Colors.grey.shade600)),
                 ),
               ],
             ),
@@ -321,14 +327,7 @@ class DashboardHomeView extends StatelessWidget {
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      Text.rich(
-                        TextSpan(
-                          children: [
-                            TextSpan(text: price, style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 14)),
-                            const TextSpan(text: " / Hr", style: TextStyle(color: Colors.grey, fontSize: 12)),
-                          ],
-                        ),
-                      ),
+                      Text.rich(TextSpan(children: [TextSpan(text: price, style: const TextStyle(color: Colors.blue, fontWeight: FontWeight.bold, fontSize: 14)), const TextSpan(text: " / Hr", style: TextStyle(color: Colors.grey, fontSize: 12))])),
                       Row(
                         children: [
                           const Icon(Icons.location_on_outlined, size: 14, color: Colors.grey),
