@@ -29,62 +29,12 @@ class _LoginScreenState extends State<LoginScreen> {
             email: _emailController.text.trim(),
             password: _passwordController.text.trim(),
           );
-      
-      // Store additional user info in Firestore and link them with uid
-      String uid = userCredential.user!.uid;
-      // setup a batch write to ensure atomicity
-      WriteBatch batch = FirebaseFirestore.instance.batch();
 
-<<<<<<< HEAD
       DocumentSnapshot userDoc = await FirebaseFirestore.instance
           .collection('users')
           .doc(userCredential.user!.uid)
           .get();
-=======
-      // Create a reference to the user's document in Firestore
-      DocumentReference userRef = FirebaseFirestore.instance.collection('users').doc(uid);
-      batch.set(userRef, {
-        'email': _emailController.text.trim(),
-        'role': _selectedRole,
-        'createdAt': FieldValue.serverTimestamp(),
-      });
->>>>>>> 80fa92d657238c333fc2d225fdd9dbddbdd6d4db
 
-      // If the user is a technician, also create a document in the technicians collection
-      if (_selectedRole == 'Technician') {
-        DocumentReference techRef = FirebaseFirestore.instance.collection('technicians').doc(uid);
-        batch.set(techRef, {
-          'email': _emailController.text.trim(),
-          'userName': '', // Placeholder for username, can be updated later
-          'category': '', // Placeholder for category, can be updated later
-          'profilePicture': '', // Placeholder for profile picture URL, can be updated later
-          'price': '', // Placeholder for price, can be updated later
-          'rating': '0', // Placeholder for rating, can be updated later
-          'reviews': '(0)', // Placeholder for reviews count, can be updated later
-          'location': '', // Placeholder for location, can be updated later
-          'contactInfo': '', // Placeholder for contact info, can be updated later
-          'totalBookings': 0, // Placeholder for total bookings, can be updated later
-          // Add any additional technician-specific fields here
-        });
-      } else {
-        // If the user is a customer, also create a document in the customers collection
-        DocumentReference customerRef = FirebaseFirestore.instance.collection('customers').doc(uid);
-        batch.set(customerRef, {
-          'email': _emailController.text.trim(),
-          'userName': '', // Placeholder for username, can be updated later
-          'profilePicture': '', // Placeholder for profile picture URL, can be updated later
-          'address': '', // Placeholder for address, can be updated later
-          'location': '', // Placeholder for location, can be updated later
-          'contactInfo': '', // Placeholder for contact info, can be updated later
-          'totalBookings': 0, // Placeholder for total bookings, can be updated later
-          // Add any additional customer-specific fields here
-        });
-      }
-
-      // Commit the batch write
-      await batch.commit();
-
-      // Show success message and navigate to HomeScreen
       if (mounted) {
         if (userDoc.exists) {
           String role = userDoc['role'];
@@ -100,70 +50,6 @@ class _LoginScreenState extends State<LoginScreen> {
     } on FirebaseAuthException catch (e) {
       if (mounted) {
         ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message ?? "Login failed")));
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-
-  // These methods are for development/testing purposes to quickly log in as a technician or customer without going through the form
-  Future<void> _devLoginAsTechnician() async {
-    setState(() => _isLoading = true);
-    try {
-      // For development purposes, we can use a hardcoded technician account
-      String email = "techguy@gmail.com";
-      String password = "000000";
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Logged in as technician!")),
-        );
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
-        );
-      }
-    } on FirebaseAuthException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message ?? "Login failed")),
-        );
-      }
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
-  }
-  Future<void> _devLoginAsCustomer() async {
-    setState(() => _isLoading = true);
-    try {
-      // For development purposes, we can use a hardcoded customer account
-      String email = "test@gmail.com";
-      String password = "123456";
-      await FirebaseAuth.instance.signInWithEmailAndPassword(
-        email: email,
-        password: password,
-      );
-
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          const SnackBar(content: Text("Logged in as customer!")),
-        );
-
-        Navigator.pushReplacement(
-          context,
-          MaterialPageRoute(builder: (context) => const HomeScreen()),
-        );
-      }
-    } on FirebaseAuthException catch (e) {
-      if (mounted) {
-        ScaffoldMessenger.of(context).showSnackBar(
-          SnackBar(content: Text(e.message ?? "Login failed")),
-        );
       }
     } finally {
       if (mounted) setState(() => _isLoading = false);
@@ -217,7 +103,6 @@ class _LoginScreenState extends State<LoginScreen> {
                         onPressed: () => Navigator.push(context, MaterialPageRoute(builder: (context) => const ForgotPasswordScreen())),
                         child: Text("Forgot Password?", style: TextStyle(color: Colors.blue.shade800)),
                       ),
-<<<<<<< HEAD
                     ),
                     const SizedBox(height: 16),
 
@@ -241,26 +126,6 @@ class _LoginScreenState extends State<LoginScreen> {
                       child: Text("Don't have an account? Sign Up", style: TextStyle(color: Colors.blue.shade800, fontSize: 16)),
                     ),
                   ],
-=======
-                      // DEV LOGIN BUTTONS (Only for development/testing purposes, can be removed in production)
-                      const SizedBox(height: 16),
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                        children: [
-                          ElevatedButton(
-                            onPressed: _devLoginAsTechnician,
-                            child: const Text("DevLogin Technician"),
-                          ),
-                          ElevatedButton(
-                            onPressed: _devLoginAsCustomer,
-                            child: const Text("DevLogin Customer"),
-                          ),
-                        ],
-                      ),
-
-                    ],
-                  ),
->>>>>>> 80fa92d657238c333fc2d225fdd9dbddbdd6d4db
                 ),
               ),
             ),

@@ -1,5 +1,3 @@
-import 'dart:math';
-
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'technician_profile_screen.dart';
@@ -16,16 +14,7 @@ class AllTechniciansScreen extends StatelessWidget {
         foregroundColor: Colors.black87,
         elevation: 0,
       ),
-      /* body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: [
-          _buildVerticalTechCard(context, "Syeila Onstefen", "Plumber", "4.9", "(200)", "\$34.00", "2.4 km", "assets/sample_6.png"),
-          _buildVerticalTechCard(context, "Loka Madya", "Home Care", "4.8", "(150)", "\$14.00", "12 km", "assets/sample_7.png"),
-          _buildVerticalTechCard(context, "John Doe", "Electricity", "4.7", "(80)", "\$40.00", "5 km", "assets/sample_8.png"),
-          _buildVerticalTechCard(context, "Alex Fixit", "Handcraft", "4.5", "(42)", "\$25.00", "8 km", "assets/sample_9.png"),
-        ],
-      ),
-      */
+
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance.collection('technicians').snapshots(),
         builder: (context, snapshot) {
