@@ -174,11 +174,11 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
                   scrollDirection: Axis.horizontal,
                   child: Row(
                     children: [
-                      _buildCategory(context, "House", "assets/sample_1.png"),
-                      _buildCategory(context, "Electricity", "assets/sample_2.png"),
-                      _buildCategory(context, "Handcraft", "assets/sample_3.png"),
-                      _buildCategory(context, "Plumber", "assets/sample_4.png"),
-                      _buildCategory(context, "More", "assets/sample_5.png"),
+                      _buildCategory(context, "House", "assets/house.png"),
+                      _buildCategory(context, "Electricity", "assets/electricity.png"),
+                      _buildCategory(context, "Handcraft", "assets/handcraft.png"),
+                      _buildCategory(context, "Plumber", "assets/plumber.png"),
+                      _buildCategory(context, "More", "assets/more.png"),
                     ],
                   ),
                 ),
