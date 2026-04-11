@@ -11,7 +11,6 @@ class TechProfileScreen extends StatefulWidget {
 }
 
 class _TechProfileScreenState extends State<TechProfileScreen> {
-  final user = FirebaseAuth.instance.currentUser;
 
   void _showAddServiceDialog() {
     String selectedCategory = "Plumber";
@@ -60,7 +59,7 @@ class _TechProfileScreenState extends State<TechProfileScreen> {
               actions: [
                 TextButton(
                   onPressed: () => Navigator.pop(context),
-                  child: const Text("Cancel", style: TextStyle(color: Colors.grey)),
+                  child: const Text("Cancel"),
                 ),
                 ElevatedButton(
                   onPressed: () async {
@@ -81,15 +80,16 @@ class _TechProfileScreenState extends State<TechProfileScreen> {
   }
 
   Future<void> _saveServiceToFirebase(String category, String rate) async {
+    final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
 
-    final docRef = FirebaseFirestore.instance.collection('users').doc(user!.uid);
+    final docRef = FirebaseFirestore.instance.collection('technicians').doc(user.uid);
 
     await docRef.update({
       'services': FieldValue.arrayUnion([
         {'name': category, 'rate': rate}
       ]),
-      'searchCategories': FieldValue.arrayUnion([category]) 
+      'searchCategories': FieldValue.arrayUnion([category])
     });
 
     if (mounted) {
@@ -98,10 +98,11 @@ class _TechProfileScreenState extends State<TechProfileScreen> {
   }
 
   Future<void> _removeServiceFromFirebase(Map<String, dynamic> serviceToRemove) async {
+    final user = FirebaseAuth.instance.currentUser;
     if (user == null) return;
-    
-    final docRef = FirebaseFirestore.instance.collection('users').doc(user!.uid);
-    
+
+    final docRef = FirebaseFirestore.instance.collection('technicians').doc(user.uid);
+
     await docRef.update({
       'services': FieldValue.arrayRemove([serviceToRemove]),
       'searchCategories': FieldValue.arrayRemove([serviceToRemove['name']])
@@ -110,11 +111,13 @@ class _TechProfileScreenState extends State<TechProfileScreen> {
 
   @override
   Widget build(BuildContext context) {
+    final user = FirebaseAuth.instance.currentUser;
+
     return Scaffold(
       backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
         title: const Text("My Profile", style: TextStyle(color: Colors.white, fontWeight: FontWeight.bold)),
-        backgroundColor: Colors.blue.shade800,
+        backgroundColor: Colors.blue.shade700,
         elevation: 0,
         actions: [
           IconButton(
@@ -135,7 +138,7 @@ class _TechProfileScreenState extends State<TechProfileScreen> {
       body: user == null
           ? const Center(child: Text("Not logged in"))
           : StreamBuilder<DocumentSnapshot>(
-              stream: FirebaseFirestore.instance.collection('users').doc(user!.uid).snapshots(),
+              stream: FirebaseFirestore.instance.collection('technicians').doc(user.uid).snapshots(),
               builder: (context, snapshot) {
                 if (snapshot.connectionState == ConnectionState.waiting) {
                   return const Center(child: CircularProgressIndicator());
@@ -145,10 +148,10 @@ class _TechProfileScreenState extends State<TechProfileScreen> {
                   return const Center(child: Text("Error loading profile"));
                 }
 
-                var userData = snapshot.data!.data() as Map<String, dynamic>;
-                String fName = userData['firstName'] ?? "Technician";
-                String lName = userData['lastName'] ?? "";
-                List<dynamic> services = userData['services'] ?? [];
+                var techData = snapshot.data!.data() as Map<String, dynamic>;
+                String fName = techData['firstName'] ?? "Technician";
+                String lName = techData['lastName'] ?? "";
+                List<dynamic> services = techData['services'] ?? [];
 
                 return SingleChildScrollView(
                   child: Column(
@@ -156,7 +159,13 @@ class _TechProfileScreenState extends State<TechProfileScreen> {
                     children: [
                       Container(
                         width: double.infinity,
-                        color: Colors.white,
+                        decoration: BoxDecoration(
+                          color: Colors.white,
+                          boxShadow: [
+                            BoxShadow(
+                                color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5))
+                          ],
+                        ),
                         padding: const EdgeInsets.all(24),
                         child: Column(
                           children: [
@@ -168,12 +177,12 @@ class _TechProfileScreenState extends State<TechProfileScreen> {
                             const SizedBox(height: 16),
                             Text("$fName $lName", style: const TextStyle(fontSize: 22, fontWeight: FontWeight.bold)),
                             const SizedBox(height: 4),
-                            Text(user!.email ?? "", style: const TextStyle(color: Colors.grey)),
+                            Text(user.email ?? "", style: const TextStyle(color: Colors.grey)),
                           ],
                         ),
                       ),
                       
-                      const SizedBox(height: 24),
+                      const SizedBox(height: 16),
                       
                       Padding(
                         padding: const EdgeInsets.symmetric(horizontal: 24.0),
@@ -235,4 +244,5 @@ class _TechProfileScreenState extends State<TechProfileScreen> {
             ),
     );
   }
+
 }
