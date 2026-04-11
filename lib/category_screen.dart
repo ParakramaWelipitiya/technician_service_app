@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'technician_profile_screen.dart';
-import 'booking_screen.dart'; // ADDED: Import the new screen
+import 'booking_screen.dart'; 
 
 class CategoryScreen extends StatelessWidget {
   final String categoryName;
@@ -63,8 +63,18 @@ class CategoryScreen extends StatelessWidget {
                 }
               }
 
+              String displayRating = data['averageRating'] != null ? data['averageRating'].toString() : "New";
+              String displayReviews = data['totalReviews'] != null ? "(${data['totalReviews']})" : "(0)";
+
               return _buildTechListTile(
-                context, techId, name, "4.9", "(New)", specificPrice, "Nearby", "assets/sample_6.png" 
+                context, 
+                techId, 
+                name, 
+                displayRating,
+                displayReviews,
+                specificPrice, 
+                "Nearby", 
+                "assets/sample_6.png" 
               );
             },
           );
@@ -73,13 +83,13 @@ class CategoryScreen extends StatelessWidget {
     );
   }
 
-Widget _buildTechListTile(BuildContext context, String techId, String name, String rating, String reviews, String price, String distance, String imagePath) {
+  Widget _buildTechListTile(BuildContext context, String techId, String name, String rating, String reviews, String price, String distance, String imagePath) {
     return Card(
       margin: const EdgeInsets.only(bottom: 16),
       shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
       elevation: 2,
       shadowColor: Colors.black.withOpacity(0.05),
-      child: InkWell(
+      child: InkWell( 
         onTap: () {
           Navigator.push(
             context,
