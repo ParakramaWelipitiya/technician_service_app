@@ -108,6 +108,9 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
                         FutureBuilder<List<DocumentSnapshot>>(
                           future: _userDataFuture,
                           builder: (context, snapshot) {
+                            if (snapshot.connectionState == ConnectionState.waiting) {
+                              return const CircularProgressIndicator(color: Colors.white); 
+                            }
                             String firstName = "User";
                             String lastName = "";
                             String username = "";
