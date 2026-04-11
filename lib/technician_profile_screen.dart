@@ -1,7 +1,6 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:flutter/material.dart';
-import 'technician_reviews_screen.dart'; // We will create this next!
-import 'booking_screen.dart';
+import 'technician_reviews_screen.dart'; 
 
 class TechnicianProfileScreen extends StatefulWidget {
   final String technicianId;
@@ -207,7 +206,7 @@ class _TechnicianProfileScreenState extends State<TechnicianProfileScreen> {
           color: Colors.white,
           shape: BoxShape.circle,
           boxShadow: [
-            BoxShadow(color: Colors.black.withOpacity(0.1), blurRadius: 8),
+            BoxShadow(color: Colors.black.withAlpha(25), blurRadius: 8),
           ],
         ),
         child: Icon(icon, size: 20, color: Colors.black87),
@@ -345,7 +344,7 @@ class _TechnicianProfileScreenState extends State<TechnicianProfileScreen> {
           color: Colors.white,
           boxShadow: [
             BoxShadow(
-              color: Colors.black.withOpacity(0.05),
+              color: Colors.black.withAlpha(13),
               blurRadius: 10,
               offset: const Offset(0, -5),
             ),
