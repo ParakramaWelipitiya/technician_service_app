@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:intl/intl.dart';
 
 class BookingScreen extends StatefulWidget {
   final String techId;
@@ -25,11 +26,51 @@ class _BookingScreenState extends State<BookingScreen> {
   bool _isEmergency = false;
   bool _isSubmitting = false;
 
+  DateTime? _selectedDate;
+  TimeOfDay? _selectedTime;
+
+  Future<void> _pickDate() async {
+    final DateTime? picked = await showDatePicker(
+      context: context,
+      initialDate: DateTime.now().add(const Duration(days: 1)),
+      firstDate: DateTime.now(), // Can't book in the past!
+      lastDate: DateTime.now().add(const Duration(days: 30)),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(primary: Colors.blue.shade800),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) setState(() => _selectedDate = picked);
+  }
+
+  Future<void> _pickTime() async {
+    final TimeOfDay? picked = await showTimePicker(
+      context: context,
+      initialTime: TimeOfDay.now(),
+      builder: (context, child) {
+        return Theme(
+          data: Theme.of(context).copyWith(
+            colorScheme: ColorScheme.light(primary: Colors.blue.shade800),
+          ),
+          child: child!,
+        );
+      },
+    );
+    if (picked != null) setState(() => _selectedTime = picked);
+  }
+
   Future<void> _submitBooking() async {
     if (_issueController.text.trim().isEmpty) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text("Please describe the issue first.")),
-      );
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please describe the issue.")));
+      return;
+    }
+
+    if (!_isEmergency && (_selectedDate == null || _selectedTime == null)) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please select a Date and Time for your appointment.")));
       return;
     }
 
@@ -38,6 +79,15 @@ class _BookingScreenState extends State<BookingScreen> {
     try {
       final user = FirebaseAuth.instance.currentUser;
       if (user != null) {
+        
+        DateTime? scheduledDateTime;
+        if (!_isEmergency && _selectedDate != null && _selectedTime != null) {
+          scheduledDateTime = DateTime(
+            _selectedDate!.year, _selectedDate!.month, _selectedDate!.day,
+            _selectedTime!.hour, _selectedTime!.minute,
+          );
+        }
+
         await FirebaseFirestore.instance.collection('bookings').add({
           'customerId': user.uid,
           'customerEmail': user.email,
@@ -48,18 +98,15 @@ class _BookingScreenState extends State<BookingScreen> {
           'issueDescription': _issueController.text.trim(),
           'isEmergency': _isEmergency,
           'status': 'Pending',
+          'scheduledDate': scheduledDateTime != null ? Timestamp.fromDate(scheduledDateTime) : null,
           'createdAt': FieldValue.serverTimestamp(),
         });
 
         if (mounted) {
-          Navigator.pop(context);
-          Navigator.pop(context);
-          
+          Navigator.pop(context); 
+          Navigator.pop(context); 
           ScaffoldMessenger.of(context).showSnackBar(
-            SnackBar(
-              content: const Text("Booking sent successfully! Waiting for technician to accept."),
-              backgroundColor: Colors.green.shade700,
-            ),
+            SnackBar(content: const Text("Booking sent successfully!"), backgroundColor: Colors.green.shade700),
           );
         }
       }
@@ -108,6 +155,55 @@ class _BookingScreenState extends State<BookingScreen> {
               ),
               const SizedBox(height: 32),
 
+              Container(
+                decoration: BoxDecoration(
+                  color: _isEmergency ? Colors.red.shade50 : Colors.white,
+                  border: Border.all(color: _isEmergency ? Colors.red.shade200 : Colors.grey.shade200),
+                  borderRadius: BorderRadius.circular(16),
+                ),
+                child: SwitchListTile(
+                  title: Text("Emergency Call (+\$50)", style: TextStyle(fontWeight: FontWeight.bold, color: _isEmergency ? Colors.red.shade700 : Colors.black87)),
+                  subtitle: Text(_isEmergency ? "Technician will be dispatched immediately." : "Toggle if you need help right now.", style: TextStyle(color: _isEmergency ? Colors.red.shade400 : Colors.grey, fontSize: 12)),
+                  value: _isEmergency,
+                  activeColor: Colors.red,
+                  onChanged: (val) => setState(() {
+                    _isEmergency = val;
+                    if (val) {
+                      _selectedDate = null;
+                      _selectedTime = null;
+                    }
+                  }),
+                ),
+              ),
+              const SizedBox(height: 24),
+
+              if (!_isEmergency) ...[
+                const Text("Schedule Appointment:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
+                const SizedBox(height: 12),
+                Row(
+                  children: [
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _pickDate,
+                        icon: const Icon(Icons.calendar_today, size: 18),
+                        label: Text(_selectedDate == null ? "Select Date" : DateFormat('MMM dd, yyyy').format(_selectedDate!)),
+                        style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                      ),
+                    ),
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: OutlinedButton.icon(
+                        onPressed: _pickTime,
+                        icon: const Icon(Icons.access_time, size: 18),
+                        label: Text(_selectedTime == null ? "Select Time" : _selectedTime!.format(context)),
+                        style: OutlinedButton.styleFrom(padding: const EdgeInsets.symmetric(vertical: 16), shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12))),
+                      ),
+                    ),
+                  ],
+                ),
+                const SizedBox(height: 24),
+              ],
+
               const Text("Describe your issue:", style: TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
               const SizedBox(height: 12),
               TextField(
@@ -120,22 +216,6 @@ class _BookingScreenState extends State<BookingScreen> {
                   border: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide.none),
                   enabledBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.grey.shade200)),
                   focusedBorder: OutlineInputBorder(borderRadius: BorderRadius.circular(16), borderSide: BorderSide(color: Colors.blue.shade300, width: 2)),
-                ),
-              ),
-              const SizedBox(height: 24),
-
-              Container(
-                decoration: BoxDecoration(
-                  color: _isEmergency ? Colors.red.shade50 : Colors.white,
-                  border: Border.all(color: _isEmergency ? Colors.red.shade200 : Colors.grey.shade200),
-                  borderRadius: BorderRadius.circular(16),
-                ),
-                child: SwitchListTile(
-                  title: Text("Emergency (+\$50)", style: TextStyle(fontWeight: FontWeight.bold, color: _isEmergency ? Colors.red.shade700 : Colors.black87)),
-                  subtitle: Text("Need them immediately?", style: TextStyle(color: _isEmergency ? Colors.red.shade400 : Colors.grey)),
-                  value: _isEmergency,
-                  activeColor: Colors.red,
-                  onChanged: (val) => setState(() => _isEmergency = val),
                 ),
               ),
               const SizedBox(height: 40),

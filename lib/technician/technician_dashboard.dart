@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; 
 import 'dart:ui'; 
-
+import 'package:intl/intl.dart';
 import 'tech_history_screen.dart';
 import 'tech_bookings_screen.dart';
 import 'tech_profile_screen.dart';
@@ -255,7 +255,7 @@ class TechHomeView extends StatelessWidget {
                 itemCount: pendingJobs.length,
                 itemBuilder: (context, index) {
                   var jobData = pendingJobs[index].data() as Map<String, dynamic>;
-                  String bookingId = pendingJobs[index].id; // The document ID
+                  String bookingId = pendingJobs[index].id; 
 
                   return _buildJobRequestCard(
                     context,
@@ -265,6 +265,7 @@ class TechHomeView extends StatelessWidget {
                     jobData['issueDescription'] ?? "No description provided.",
                     jobData['agreedPrice'] ?? "\$0.00",
                     jobData['isEmergency'] ?? false,
+                    jobData['scheduledDate'],
                   );
                 },
               );
@@ -296,7 +297,13 @@ class TechHomeView extends StatelessWidget {
     );
   }
 
-  Widget _buildJobRequestCard(BuildContext context, String bookingId, String category, String customerName, String description, String price, bool isEmergency) {
+  Widget _buildJobRequestCard(BuildContext context, String bookingId, String category, String customerName, String description, String price, bool isEmergency, Timestamp? scheduledDate) {
+    
+    String displayDate = "Immediate / Emergency";
+    if (scheduledDate != null) {
+      displayDate = DateFormat('MMM dd, yyyy • hh:mm a').format(scheduledDate.toDate());
+    }
+
     return Container(
       margin: const EdgeInsets.only(bottom: 16),
       padding: const EdgeInsets.all(16),
@@ -331,6 +338,16 @@ class TechHomeView extends StatelessWidget {
               Text(customerName, style: TextStyle(color: Colors.grey.shade600, fontSize: 13)),
             ],
           ),
+          
+          const SizedBox(height: 12),
+          Row(
+            children: [
+              Icon(scheduledDate != null ? Icons.calendar_month : Icons.flash_on, size: 14, color: Colors.blue.shade700),
+              const SizedBox(width: 6),
+              Text(displayDate, style: TextStyle(color: Colors.blue.shade700, fontWeight: FontWeight.bold, fontSize: 13)),
+            ],
+          ),
+
           const SizedBox(height: 12),
           Container(
             width: double.infinity,
