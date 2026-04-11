@@ -61,15 +61,12 @@ class CategoryScreen extends StatelessWidget {
                   break;
                 }
               }
-              String rating = (double.tryParse(data['rating']?.toString() ?? '0') ?? 0.0).toStringAsFixed(1);
-              String reviews = data['reviews']?.toString() ?? '(0)'; // Placeholder
               String imagePath = data['profilePicture'] ?? 'assets/sample_6.png'; // Placeholder
-
               String displayRating = data['averageRating'] != null ? data['averageRating'].toString() : "New";
               String displayReviews = data['totalReviews'] != null ? "(${data['totalReviews']})" : "(0)";
 
               return _buildTechListTile(
-                context, techId, name, rating, reviews, price, "Nearby", imagePath
+                context, techId, name, displayRating, displayReviews, price, "Nearby", imagePath 
               );
             },
           );
