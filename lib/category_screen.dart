@@ -20,10 +20,9 @@ class CategoryScreen extends StatelessWidget {
       ),
       body: StreamBuilder<QuerySnapshot>(
         stream: FirebaseFirestore.instance
-            .collection('users')
-            .where('role', isEqualTo: 'Technician')
+            .collection('technicians')
             .where('isApproved', isEqualTo: true)
-            .where('searchCategories', arrayContains: categoryName) 
+            .where('searchCategories', arrayContains: categoryName)
             .snapshots(),
         builder: (context, snapshot) {
           if (snapshot.connectionState == ConnectionState.waiting) {
@@ -53,18 +52,21 @@ class CategoryScreen extends StatelessWidget {
               var data = allDocs[index].data() as Map<String, dynamic>;
               
               String name = "${data['firstName'] ?? 'Tech'} ${data['lastName'] ?? ''}".trim();
-              
               List<dynamic> services = data['services'] ?? [];
-              String specificPrice = "\$0.00";
+              String price = "\$0.00";
+              // Find the price for the specific category being viewed
               for (var svc in services) {
                 if (svc['name'] == categoryName) {
-                  specificPrice = "\$${svc['rate']}";
-                  break; 
+                  price = "\$${svc['rate']}";
+                  break;
                 }
               }
+              String rating = (double.tryParse(data['rating']?.toString() ?? '0') ?? 0.0).toStringAsFixed(1);
+              String reviews = data['reviews']?.toString() ?? '(0)'; // Placeholder
+              String imagePath = data['profilePicture'] ?? 'assets/sample_6.png'; // Placeholder
 
               return _buildTechListTile(
-                context, techId, name, "4.9", "(New)", specificPrice, "Nearby", "assets/sample_6.png" 
+                context, techId, name, rating, reviews, price, "Nearby", imagePath
               );
             },
           );
@@ -84,9 +86,7 @@ Widget _buildTechListTile(BuildContext context, String techId, String name, Stri
           Navigator.push(
             context,
             MaterialPageRoute(
-              builder: (context) => TechnicianProfileScreen(
-                name: name, category: categoryName, rating: rating, reviews: reviews, price: price, imagePath: imagePath,
-              ),
+              builder: (context) => TechnicianProfileScreen(technicianId: techId),
             ),
           );
         },

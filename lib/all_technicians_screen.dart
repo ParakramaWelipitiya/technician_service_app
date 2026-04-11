@@ -30,16 +30,24 @@ class AllTechniciansScreen extends StatelessWidget {
               padding: const EdgeInsets.all(16),
               itemCount: technicians.length,
               itemBuilder: (context, index) {
-                var technician = technicians[index] ;
+                var technicianDoc = technicians[index];
+                var technician = technicianDoc.data() as Map<String, dynamic>;
+                final String name = "${technician['firstName'] ?? ''} ${technician['lastName'] ?? ''}".trim();
+                List<dynamic> services = technician['services'] ?? [];
+                final String category = services.isNotEmpty ? services[0]['name'] : 'General Services';
+                final String price = services.isNotEmpty ? "\$${services[0]['rate']}" : "\$0.00";
+                final String rating = (double.tryParse(technician['rating']?.toString() ?? '0') ?? 0.0).toStringAsFixed(1);
+
                 return _buildVerticalTechCard(
                   context,
-                  technician['userName'] ?? 'Unknown',
-                  technician['category'] ?? 'Unknown',
-                  technician['rating'] ?? '0',
-                  technician['reviews'] ?? '(0)',
-                  technician['price'] ?? '\$0.00',
+                  technicianDoc.id,
+                  name,
+                  category,
+                  rating,
+                  technician['reviews']?.toString() ?? '(0)',
+                  price,
                   technician['location'] ?? 'Unknown',
-                  technician['profilePicture'] ?? '',
+                  technician['profilePicture'] ?? 'assets/sample_6.png', // Placeholder
                 );
               },
             );
@@ -51,16 +59,12 @@ class AllTechniciansScreen extends StatelessWidget {
     );
   }
 
-  Widget _buildVerticalTechCard(BuildContext context, String name, String category, String rating, String reviews, String price, String distance, String imagePath) {
+  Widget _buildVerticalTechCard(BuildContext context, String technicianId, String name, String category, String rating, String reviews, String price, String distance, String imagePath) {
     return GestureDetector(
       onTap: () {
         Navigator.push(
           context,
-          MaterialPageRoute(
-            builder: (context) => TechnicianProfileScreen(
-              name: name, category: category, rating: rating, reviews: reviews, price: price, imagePath: imagePath,
-            ),
-          ),
+          MaterialPageRoute(builder: (context) => TechnicianProfileScreen(technicianId: technicianId)),
         );
       },
       child: Card(

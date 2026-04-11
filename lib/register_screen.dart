@@ -31,56 +31,75 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _mobileController = TextEditingController();
 
   Future<void> _registerUser() async {
-    if (!_formKey.currentState!.validate()) return;
-    
-    if (_passwordController.text != _confirmPasswordController.text) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Passwords do not match")));
-      return;
-    }
-
-    if (_selectedRole == 'Technician' && !_isFileUploaded) {
-      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Please upload a certificate")));
-      return;
-    }
-
-    setState(() => _isLoading = true);
-    try {
-      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-        email: _emailController.text.trim(),
-        password: _passwordController.text.trim(),
-      );
-
-      Map<String, dynamic> userData = {
-        'email': _emailController.text.trim(),
-        'role': _selectedRole,
-        'createdAt': FieldValue.serverTimestamp(),
-      };
-
-      if (_selectedRole == 'Customer') {
-        userData['username'] = _usernameController.text.trim();
-      } else {
-        userData['firstName'] = _firstNameController.text.trim();
-        userData['lastName'] = _lastNameController.text.trim();
-        userData['idNumber'] = _idController.text.trim();
-        userData['mobile'] = _mobileController.text.trim();
-        userData['isApproved'] = false; 
-      }
-
-      await FirebaseFirestore.instance.collection('users').doc(userCredential.user!.uid).set(userData);
-
-      if (mounted) {
-        if (_selectedRole == 'Customer') {
-          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const CustomerDashboard()), (route) => false);
-        } else {
-          Navigator.pushAndRemoveUntil(context, MaterialPageRoute(builder: (context) => const TechnicianDashboard()), (route) => false);
-        }
-      }
-    } on FirebaseAuthException catch (e) {
-      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message ?? "Registration failed")));
-    } finally {
-      if (mounted) setState(() => _isLoading = false);
-    }
+  if (!_formKey.currentState!.validate()) return;
+  
+  // Basic validation checks...
+  if (_passwordController.text != _confirmPasswordController.text) {
+    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Passwords do not match")));
+    return;
   }
+
+  setState(() => _isLoading = true);
+  try {
+    // 1. Create the Auth Account
+    UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+      email: _emailController.text.trim(),
+      password: _passwordController.text.trim(),
+    );
+
+    final String uid = userCredential.user!.uid;
+    final batch = FirebaseFirestore.instance.batch();
+
+    // 2. The BASE User Data (Always in 'users' collection)
+    DocumentReference userRef = FirebaseFirestore.instance.collection('users').doc(uid);
+    batch.set(userRef, {
+      'email': _emailController.text.trim(),
+      'role': _selectedRole,
+      'username': _usernameController.text.trim(), // Discord-style handle saved centrally
+      'createdAt': FieldValue.serverTimestamp(),
+      'uid': uid,
+    });
+
+    // 3. The ROLE-SPECIFIC Data
+    if (_selectedRole == 'Customer') {
+      DocumentReference customerRef = FirebaseFirestore.instance.collection('customers').doc(uid);
+      batch.set(customerRef, {
+        'firstName': _firstNameController.text.trim(),
+        'lastName': _lastNameController.text.trim(),
+        'address': '', // As per new schema
+        'totalBookings': 0,
+      });
+    } else {
+      DocumentReference techRef = FirebaseFirestore.instance.collection('technicians').doc(uid);
+      batch.set(techRef, {
+        'firstName': _firstNameController.text.trim(),
+        'lastName': _lastNameController.text.trim(),
+        'idNumber': _idController.text.trim(),
+        'mobile': _mobileController.text.trim(),
+        'isApproved': false, // Technicians start unapproved
+        'rating': 0.0, // New technicians start with 0.0 rating
+        'services': [], // Initialize with empty services list
+        'searchCategories': [], // Initialize with empty search categories
+      });
+    }
+
+    // 4. Execute all writes at once
+    await batch.commit();
+
+    if (mounted) {
+      // Navigate to the correct dashboard after registration
+      if (_selectedRole == 'Customer') {
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const CustomerDashboard()));
+      } else {
+        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const TechnicianDashboard()));
+      }
+    }
+  } on FirebaseAuthException catch (e) {
+    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message ?? "Error")));
+  } finally {
+    if (mounted) setState(() => _isLoading = false);
+  }
+}
 
   @override
   Widget build(BuildContext context) {
@@ -120,7 +139,11 @@ class _RegisterScreenState extends State<RegisterScreen> {
         children: [
           _buildRoleSelector(),
           const SizedBox(height: 32),
-          _buildTextField("Username", Icons.person_outline, _usernameController),
+          _buildTextField("Username", Icons.alternate_email, _usernameController),
+          const SizedBox(height: 16),
+          _buildTextField("First Name", Icons.person_outline, _firstNameController),
+          const SizedBox(height: 16),
+          _buildTextField("Last Name", Icons.person_outline, _lastNameController),
           const SizedBox(height: 16),
           _buildTextField("Email", Icons.email_outlined, _emailController),
           const SizedBox(height: 16),
@@ -214,6 +237,8 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   content: Column(
                     children: [
                       const SizedBox(height: 8),
+                      _buildTextField("Username (e.g. @tech_pro)", Icons.alternate_email, _usernameController),
+                      const SizedBox(height: 16),
                       _buildTextField("First Name", Icons.person_outline, _firstNameController),
                       const SizedBox(height: 16),
                       _buildTextField("Last Name", Icons.person_outline, _lastNameController),

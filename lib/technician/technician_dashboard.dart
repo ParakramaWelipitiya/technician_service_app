@@ -40,16 +40,16 @@ class _TechnicianDashboardState extends State<TechnicianDashboard> {
     }
 
     return StreamBuilder<DocumentSnapshot>(
-      stream: FirebaseFirestore.instance.collection('users').doc(user.uid).snapshots(),
+      stream: FirebaseFirestore.instance.collection('technicians').doc(user.uid).snapshots(),
       builder: (context, snapshot) {
         if (snapshot.connectionState == ConnectionState.waiting) {
           return const Scaffold(body: Center(child: CircularProgressIndicator()));
         }
 
         bool isVerifiedByAdmin = false;
-        if (snapshot.hasData && snapshot.data!.data() != null) {
-          var userData = snapshot.data!.data() as Map<String, dynamic>;
-          isVerifiedByAdmin = userData['isApproved'] ?? false; 
+        if (snapshot.hasData && snapshot.data!.exists) {
+          var techData = snapshot.data!.data() as Map<String, dynamic>;
+          isVerifiedByAdmin = techData['isApproved'] ?? false; 
         }
 
         return Scaffold(
@@ -130,8 +130,27 @@ class _TechnicianDashboardState extends State<TechnicianDashboard> {
   }
 }
 
-class TechHomeView extends StatelessWidget {
+class TechHomeView extends StatefulWidget {
   const TechHomeView({super.key});
+
+  @override
+  State<TechHomeView> createState() => _TechHomeViewState();
+}
+
+class _TechHomeViewState extends State<TechHomeView> {
+  Future<List<DocumentSnapshot>>? _userDataFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      _userDataFuture = Future.wait([
+        FirebaseFirestore.instance.collection('users').doc(user.uid).get(),
+        FirebaseFirestore.instance.collection('technicians').doc(user.uid).get(),
+      ]);
+    }
+  }
 
   Future<void> _acceptJob(BuildContext context, String bookingId) async {
     await FirebaseFirestore.instance.collection('bookings').doc(bookingId).update({
@@ -154,14 +173,6 @@ class TechHomeView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
-    String displayName = "Technician";
-    
-    if (user != null && user.email != null) {
-      displayName = user.email!.split('@')[0];
-      if (displayName.isNotEmpty) {
-        displayName = displayName[0].toUpperCase() + displayName.substring(1);
-      }
-    }
 
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
@@ -181,14 +192,36 @@ class TechHomeView extends StatelessWidget {
               Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Column(
-                    crossAxisAlignment: CrossAxisAlignment.start,
-                    children: [
-                      Text("Hello 👋", style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 14)),
-                      const SizedBox(height: 4),
-                      Text(displayName, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-                    ],
-                  ),
+                      FutureBuilder<List<DocumentSnapshot>>(
+                        future: _userDataFuture,
+                        builder: (context, snapshot) {
+                          String firstName = "Technician";
+                          String lastName = "";
+                          String username = "";
+                          if (snapshot.hasData && snapshot.data != null) {
+                            var userDoc = snapshot.data![0].data() as Map<String, dynamic>?;
+                            var techDoc = snapshot.data![1].data() as Map<String, dynamic>?;
+                            firstName = techDoc?['firstName'] ?? "Technician";
+                            lastName = techDoc?['lastName'] ?? "";
+                            username = userDoc?['username'] ?? "";
+                          }
+                          return Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text("Hello 👋", style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 14)),
+                              const SizedBox(height: 4),
+                              Column(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Text("$firstName $lastName".trim(), style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                                  if (username.isNotEmpty)
+                                    Text(username, style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14, fontStyle: FontStyle.italic)),
+                                ],
+                              ),
+                            ],
+                          );
+                        },
+                      ),
                   const CircleAvatar(backgroundColor: Colors.white24, child: Icon(Icons.notifications_none, color: Colors.white)),
                 ],
               ),

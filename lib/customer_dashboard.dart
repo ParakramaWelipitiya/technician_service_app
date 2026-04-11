@@ -66,18 +66,23 @@ class DashboardHomeView extends StatefulWidget {
 class _DashboardHomeViewState extends State<DashboardHomeView> {
   final TextEditingController _searchController = TextEditingController();
   String _searchQuery = ""; // Tracks what the user is typing
+  Future<List<DocumentSnapshot>>? _userDataFuture;
+
+  @override
+  void initState() {
+    super.initState();
+    final user = FirebaseAuth.instance.currentUser;
+    if (user != null) {
+      _userDataFuture = Future.wait([
+        FirebaseFirestore.instance.collection('users').doc(user.uid).get(),
+        FirebaseFirestore.instance.collection('customers').doc(user.uid).get(),
+      ]);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
     final user = FirebaseAuth.instance.currentUser;
-    String displayName = "User";
-    
-    if (user != null && user.email != null) {
-      displayName = user.email!.split('@')[0];
-      if (displayName.isNotEmpty) {
-        displayName = displayName[0].toUpperCase() + displayName.substring(1);
-      }
-    }
 
     return SingleChildScrollView(
       child: Column(
@@ -100,14 +105,36 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        Text("Hello 👋", style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 14)),
-                        const SizedBox(height: 4),
-                        Text(displayName, style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
-                      ],
-                    ),
+                        FutureBuilder<List<DocumentSnapshot>>(
+                          future: _userDataFuture,
+                          builder: (context, snapshot) {
+                            String firstName = "User";
+                            String lastName = "";
+                            String username = "";
+                            if (snapshot.hasData && snapshot.data != null) {
+                              var userDoc = snapshot.data![0].data() as Map<String, dynamic>?;
+                              var customerDoc = snapshot.data![1].data() as Map<String, dynamic>?;
+                              firstName = customerDoc?['firstName'] ?? "User";
+                              lastName = customerDoc?['lastName'] ?? "";
+                              username = userDoc?['username'] ?? "";
+                            }
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text("Hello 👋", style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 14)),
+                                const SizedBox(height: 4),
+                                Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text("$firstName $lastName".trim(), style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
+                                    if (username.isNotEmpty)
+                                      Text(username, style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14, fontStyle: FontStyle.italic)),
+                                  ],
+                                ),
+                              ],
+                            );
+                          },
+                        ),
                     CircleAvatar(
                       backgroundColor: Colors.white,
                       child: IconButton(
@@ -178,9 +205,8 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
           SizedBox(
             height: 260, 
             child: StreamBuilder<QuerySnapshot>(
-              stream: FirebaseFirestore.instance
-                  .collection('users')
-                  .where('role', isEqualTo: 'Technician')
+              stream: FirebaseFirestore.instance // Query technicians directly
+                  .collection('technicians')
                   .where('isApproved', isEqualTo: true) 
                   .snapshots(),
               builder: (context, snapshot) {
@@ -197,11 +223,10 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
                 if (_searchQuery.isNotEmpty) {
                   allDocs = allDocs.where((doc) {
                     var data = doc.data() as Map<String, dynamic>;
-                    String fullName = "${data['firstName']} ${data['lastName']}".toLowerCase();
-                    
+                    String fullName = "${data['firstName'] ?? ''} ${data['lastName'] ?? ''}".toLowerCase();
                     List<dynamic> categories = data['searchCategories'] ?? [];
                     bool matchesCategory = categories.any((cat) => cat.toString().toLowerCase().contains(_searchQuery));
-                    
+                                        
                     return fullName.contains(_searchQuery) || matchesCategory;
                   }).toList();
                 }
@@ -216,19 +241,22 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
                   itemCount: allDocs.length,
                   itemBuilder: (context, index) {
                     var data = allDocs[index].data() as Map<String, dynamic>;
+                    var docId = allDocs[index].id;
                     
                     String name = "${data['firstName'] ?? 'Tech'} ${data['lastName'] ?? ''}".trim();
                     List<dynamic> services = data['services'] ?? [];
-                    
+
                     String displayCategory = services.isNotEmpty ? services[0]['name'] : "General Services";
                     String displayPrice = services.isNotEmpty ? "\$${services[0]['rate']}" : "\$0.00";
+                    String rating = (double.tryParse(data['rating']?.toString() ?? '0') ?? 0.0).toStringAsFixed(1);
 
                     return _buildTechnicianCard(
                       context, 
+                      docId,
                       name, 
                       displayCategory, 
-                      "4.9",
-                      "(New)", 
+                      rating,
+                      "(0)", // Placeholder for reviews count
                       displayPrice, 
                       "Nearby",
                       "assets/sample_6.png"
@@ -269,10 +297,10 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
     );
   }
 
-  Widget _buildTechnicianCard(BuildContext context, String name, String category, String rating, String reviews, String price, String distance, String imagePath) {
+  Widget _buildTechnicianCard(BuildContext context, String technicianId, String name, String category, String rating, String reviews, String price, String distance, String imagePath) {
     return GestureDetector(
       onTap: () => Navigator.push(context, MaterialPageRoute(
-        builder: (context) => TechnicianProfileScreen(name: name, category: category, rating: rating, reviews: reviews, price: price, imagePath: imagePath),
+        builder: (context) => TechnicianProfileScreen(technicianId: technicianId),
       )),
       child: Container(
         width: 200,
