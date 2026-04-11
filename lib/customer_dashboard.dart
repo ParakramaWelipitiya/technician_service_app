@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-import 'package:cloud_firestore/cloud_firestore.dart'; // ADDED: To read live database
+import 'package:cloud_firestore/cloud_firestore.dart'; 
 import 'discover_screen.dart';
 import 'chat_screen.dart';
 import 'history_screen.dart';
@@ -157,7 +157,7 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
                     controller: _searchController,
                     onChanged: (value) {
                       setState(() {
-                        _searchQuery = value.toLowerCase(); // Updates screen as you type
+                        _searchQuery = value.toLowerCase(); 
                       });
                     },
                     decoration: const InputDecoration(
@@ -250,16 +250,19 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
                     String displayPrice = services.isNotEmpty ? "\$${services[0]['rate']}" : "\$0.00";
                     String rating = (double.tryParse(data['rating']?.toString() ?? '0') ?? 0.0).toStringAsFixed(1);
 
+                    String displayRating = data['averageRating'] != null ? data['averageRating'].toString() : "New";
+                    String displayReviews = data['totalReviews'] != null ? "(${data['totalReviews']})" : "(0)";
+
                     return _buildTechnicianCard(
                       context, 
                       docId,
                       name, 
                       displayCategory, 
-                      rating,
-                      "(0)", // Placeholder for reviews count
+                      displayRating,
+                      displayReviews,
                       displayPrice, 
-                      "Nearby",
-                      "assets/sample_6.png"
+                      "Nearby", 
+                      "assets/sample_6.png" 
                     );
                   },
                 );
@@ -341,7 +344,7 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
                       Expanded(child: Text(name, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 14), overflow: TextOverflow.ellipsis)),
                       Row(
                         children: [
-                          const Icon(Icons.star, size: 14, color: Colors.blue),
+                          const Icon(Icons.star, size: 14, color: Colors.amber),
                           const SizedBox(width: 4),
                           Text(rating, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 12)),
                           Text(" $reviews", style: const TextStyle(color: Colors.grey, fontSize: 10)),
