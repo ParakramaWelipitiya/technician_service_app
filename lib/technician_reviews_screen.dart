@@ -1,137 +1,73 @@
 import 'package:flutter/material.dart';
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:intl/intl.dart';
 
 class TechnicianReviewsScreen extends StatelessWidget {
+  final String technicianId;
   final String techName;
 
-  const TechnicianReviewsScreen({super.key, required this.techName});
+  const TechnicianReviewsScreen({super.key, required this.technicianId, required this.techName});
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
+      backgroundColor: Colors.grey.shade50,
       appBar: AppBar(
-        title: Text("Reviews for $techName"),
-        backgroundColor: Colors.white,
-        foregroundColor: Colors.black87,
-        elevation: 1,
+        title: Text("Reviews for $techName", style: const TextStyle(color: Colors.white, fontSize: 18)),
+        backgroundColor: Colors.blue.shade800,
+        iconTheme: const IconThemeData(color: Colors.white),
+        elevation: 0,
       ),
-      body: ListView(
-        padding: const EdgeInsets.all(16),
-        children: const [
-          ReviewCard(
-            reviewerName: "Sample review 1",
-            reviewText: "Excellent work. Showed up exactly on time, knew exactly what to do, and completed the repair efficiently.",
-            rating: 5,
-            date: "2 days ago",
-          ),
-          ReviewCard(
-            reviewerName: "Sample review 2",
-            reviewText: "Very polite and cleaned up the workspace after the plumbing was fixed. Highly recommend!",
-            rating: 5,
-            date: "1 week ago",
-          ),
-          ReviewCard(
-            reviewerName: "Sample review 3",
-            reviewText: "Good job overall, but arrived 15 minutes late.",
-            rating: 4,
-            date: "2 weeks ago",
-          ),
-        ],
-      ),
-    );
-  }
-}
-
-class ReviewCard extends StatefulWidget {
-  final String reviewerName;
-  final String reviewText;
-  final int rating;
-  final String date;
-
-  const ReviewCard({
-    super.key,
-    required this.reviewerName,
-    required this.reviewText,
-    required this.rating,
-    required this.date,
-  });
-
-  @override
-  State<ReviewCard> createState() => _ReviewCardState();
-}
-
-class _ReviewCardState extends State<ReviewCard> {
-  bool _isLiked = false;
-  int _likeCount = 12;
-
-  @override
-  Widget build(BuildContext context) {
-    return Card(
-      margin: const EdgeInsets.only(bottom: 16),
-      shape: RoundedRectangleBorder(
-        borderRadius: BorderRadius.circular(16),
-        side: BorderSide(color: Colors.grey.shade200),
-      ),
-      elevation: 0,
-      color: Colors.grey.shade50,
-      child: Padding(
-        padding: const EdgeInsets.all(16.0),
-        child: Column(
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              mainAxisAlignment: MainAxisAlignment.spaceBetween,
-              children: [
-                Text(widget.reviewerName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)),
-                Text(widget.date, style: const TextStyle(color: Colors.grey, fontSize: 12)),
-              ],
-            ),
-            const SizedBox(height: 8),
-            Row(
-              children: List.generate(
-                5,
-                (index) => Icon(
-                  index < widget.rating ? Icons.star : Icons.star_border,
-                  color: Colors.amber,
-                  size: 16,
-                ),
+      body: StreamBuilder<QuerySnapshot>(
+        stream: FirebaseFirestore.instance.collection('technicians').doc(technicianId).collection('reviews').orderBy('timestamp', descending: true).snapshots(),
+        builder: (context, snapshot) {
+          if (snapshot.connectionState == ConnectionState.waiting) return const Center(child: CircularProgressIndicator());
+          if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+            return Center(
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.center,
+                children: [
+                  Icon(Icons.star_border, size: 64, color: Colors.grey.shade400),
+                  const SizedBox(height: 16),
+                  Text("No reviews yet.", style: TextStyle(color: Colors.grey.shade600, fontSize: 16)),
+                ],
               ),
-            ),
-            const SizedBox(height: 12),
-            Text(widget.reviewText, style: TextStyle(color: Colors.grey.shade700, height: 1.4)),
-            const SizedBox(height: 12),
-            
-            Row(
-              children: [
-                GestureDetector(
-                  onTap: () {
-                    setState(() {
-                      _isLiked = !_isLiked;
-                      _isLiked ? _likeCount++ : _likeCount--;
-                    });
-                  },
-                  child: Row(
-                    children: [
-                      Icon(
-                        _isLiked ? Icons.thumb_up : Icons.thumb_up_alt_outlined,
-                        size: 16,
-                        color: _isLiked ? Colors.blue : Colors.grey,
-                      ),
-                      const SizedBox(width: 6),
-                      Text(
-                        "Helpful ($_likeCount)",
-                        style: TextStyle(
-                          color: _isLiked ? Colors.blue : Colors.grey,
-                          fontWeight: _isLiked ? FontWeight.bold : FontWeight.normal,
-                          fontSize: 12,
-                        ),
-                      ),
-                    ],
-                  ),
+            );
+          }
+
+          var reviews = snapshot.data!.docs;
+          return ListView.builder(
+            padding: const EdgeInsets.all(16),
+            itemCount: reviews.length,
+            itemBuilder: (context, index) {
+              var review = reviews[index].data() as Map<String, dynamic>;
+              double rating = double.tryParse(review['rating'].toString()) ?? 5.0;
+              String comment = review['comment'] ?? "No comment provided.";
+              String customerName = review['customerName'] ?? "Customer";
+              
+              String dateStr = "Recent";
+              if (review['timestamp'] != null) {
+                DateTime date = (review['timestamp'] as Timestamp).toDate();
+                dateStr = DateFormat('MMM dd, yyyy').format(date);
+              }
+
+              return Container(
+                margin: const EdgeInsets.only(bottom: 16), padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withAlpha(10), blurRadius: 8, offset: const Offset(0, 4))]),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [Text(customerName, style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 16)), Text(dateStr, style: TextStyle(color: Colors.grey.shade500, fontSize: 12))]),
+                    const SizedBox(height: 8),
+                    Row(children: List.generate(5, (starIndex) => Icon(starIndex < rating ? Icons.star : Icons.star_border, color: Colors.amber, size: 16))),
+                    const SizedBox(height: 12),
+                    Text(comment, style: TextStyle(color: Colors.grey.shade700, height: 1.4)),
+                  ],
                 ),
-              ],
-            )
-          ],
-        ),
+              );
+            },
+          );
+        },
       ),
     );
   }
