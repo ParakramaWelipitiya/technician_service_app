@@ -6,7 +6,7 @@ import 'package:intl/intl.dart';
 import 'tech_history_screen.dart';
 import 'tech_bookings_screen.dart';
 import 'tech_profile_screen.dart';
-import '../login_screen.dart'; 
+import '../../login_screen.dart'; 
 
 class TechnicianDashboard extends StatefulWidget {
   const TechnicianDashboard({super.key});

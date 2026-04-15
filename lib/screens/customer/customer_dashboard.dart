@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; 
-import 'discover_screen.dart';
-import 'chat_screen.dart';
-import 'history_screen.dart';
+import '../../discover_screen.dart';
+import '../chat/chat_screen.dart';
+import '../booking/history_screen.dart';
 import 'profile_screen.dart'; 
-import 'notifications_screen.dart';
-import 'category_screen.dart';
-import 'technician_profile_screen.dart'; 
-import 'all_technicians_screen.dart';    
+import '../home/notifications_screen.dart';
+import '../home/category_screen.dart';
+import '../booking/technician_profile_screen.dart'; 
+import '../booking/all_technicians_screen.dart';    
 
 class CustomerDashboard extends StatefulWidget {
   const CustomerDashboard({super.key});
@@ -82,7 +82,6 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
 
   @override
   Widget build(BuildContext context) {
-    final user = FirebaseAuth.instance.currentUser;
 
     return SingleChildScrollView(
       child: Column(
@@ -108,6 +107,9 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
                         FutureBuilder<List<DocumentSnapshot>>(
                           future: _userDataFuture,
                           builder: (context, snapshot) {
+                            if (snapshot.connectionState == ConnectionState.waiting) {
+                              return const CircularProgressIndicator(color: Colors.white); 
+                            }
                             String firstName = "User";
                             String lastName = "";
                             String username = "";
@@ -121,14 +123,14 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
                             return Column(
                               crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text("Hello 👋", style: TextStyle(color: Colors.white.withOpacity(0.9), fontSize: 14)),
+                                Text("Hello 👋", style: TextStyle(color: Colors.white.withAlpha(230), fontSize: 14)),
                                 const SizedBox(height: 4),
                                 Column(
                                   crossAxisAlignment: CrossAxisAlignment.start,
                                   children: [
                                     Text("$firstName $lastName".trim(), style: const TextStyle(color: Colors.white, fontSize: 24, fontWeight: FontWeight.bold)),
                                     if (username.isNotEmpty)
-                                      Text(username, style: TextStyle(color: Colors.white.withOpacity(0.8), fontSize: 14, fontStyle: FontStyle.italic)),
+                                      Text(username, style: TextStyle(color: Colors.white.withAlpha(204), fontSize: 14, fontStyle: FontStyle.italic)),
                                   ],
                                 ),
                               ],
@@ -151,7 +153,7 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
                   decoration: BoxDecoration(
                     color: Colors.white,
                     borderRadius: BorderRadius.circular(30),
-                    boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5))],
+                    boxShadow: [BoxShadow(color: Colors.black.withAlpha(13), blurRadius: 10, offset: const Offset(0, 5))],
                   ),
                   child: TextField(
                     controller: _searchController,
@@ -248,7 +250,6 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
 
                     String displayCategory = services.isNotEmpty ? services[0]['name'] : "General Services";
                     String displayPrice = services.isNotEmpty ? "\$${services[0]['rate']}" : "\$0.00";
-                    String rating = (double.tryParse(data['rating']?.toString() ?? '0') ?? 0.0).toStringAsFixed(1);
 
                     String displayRating = data['averageRating'] != null ? data['averageRating'].toString() : "New";
                     String displayReviews = data['totalReviews'] != null ? "(${data['totalReviews']})" : "(0)";
@@ -288,7 +289,7 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
               decoration: BoxDecoration(
                 color: Colors.white,
                 shape: BoxShape.circle,
-                boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5))],
+                boxShadow: [BoxShadow(color: Colors.black.withAlpha(13), blurRadius: 10, offset: const Offset(0, 5))],
               ),
               child: ClipOval(child: Image.asset(imagePath, fit: BoxFit.cover, errorBuilder: (c, e, s) => const Icon(Icons.category, color: Colors.blue))),
             ),
@@ -311,7 +312,7 @@ class _DashboardHomeViewState extends State<DashboardHomeView> {
         decoration: BoxDecoration(
           color: Colors.white,
           borderRadius: BorderRadius.circular(16),
-          boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.05), blurRadius: 10, offset: const Offset(0, 5))],
+          boxShadow: [BoxShadow(color: Colors.black.withAlpha(13), blurRadius: 10, offset: const Offset(0, 5))],
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,

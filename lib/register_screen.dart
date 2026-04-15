@@ -1,8 +1,12 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'customer_dashboard.dart';
-import 'technician/technician_dashboard.dart';
+import 'package:firebase_storage/firebase_storage.dart';
+import 'package:file_picker/file_picker.dart';
+import 'dart:io';
+
+import 'screens/customer/customer_dashboard.dart';
+import 'screens/technician/technician_dashboard.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});
@@ -16,7 +20,10 @@ class _RegisterScreenState extends State<RegisterScreen> {
   bool _isLoading = false;
   
   int _currentStep = 0;
-  bool _isFileUploaded = false;
+
+  // --- NEW FILE UPLOAD VARIABLES ---
+  File? _certificateFile;
+  String? _certificateFileName;
 
   final _formKey = GlobalKey<FormState>();
   final _emailController = TextEditingController();
@@ -30,76 +37,115 @@ class _RegisterScreenState extends State<RegisterScreen> {
   final _idController = TextEditingController();
   final _mobileController = TextEditingController();
 
-  Future<void> _registerUser() async {
-  if (!_formKey.currentState!.validate()) return;
-  
-  // Basic validation checks...
-  if (_passwordController.text != _confirmPasswordController.text) {
-    ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Passwords do not match")));
-    return;
-  }
+  // 1. Function to pick the file from the phone
+  Future<void> _pickCertificate() async {
+    try {
+      FilePickerResult? result = await FilePicker.platform.pickFiles(
+        type: FileType.custom,
+        allowedExtensions: ['jpg', 'jpeg', 'png', 'pdf', 'doc', 'docx'],
+      );
 
-  setState(() => _isLoading = true);
-  try {
-    // 1. Create the Auth Account
-    UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
-      email: _emailController.text.trim(),
-      password: _passwordController.text.trim(),
-    );
-
-    final String uid = userCredential.user!.uid;
-    final batch = FirebaseFirestore.instance.batch();
-
-    // 2. The BASE User Data (Always in 'users' collection)
-    DocumentReference userRef = FirebaseFirestore.instance.collection('users').doc(uid);
-    batch.set(userRef, {
-      'email': _emailController.text.trim(),
-      'role': _selectedRole,
-      'username': _usernameController.text.trim(), // Discord-style handle saved centrally
-      'createdAt': FieldValue.serverTimestamp(),
-      'uid': uid,
-    });
-
-    // 3. The ROLE-SPECIFIC Data
-    if (_selectedRole == 'Customer') {
-      DocumentReference customerRef = FirebaseFirestore.instance.collection('customers').doc(uid);
-      batch.set(customerRef, {
-        'firstName': _firstNameController.text.trim(),
-        'lastName': _lastNameController.text.trim(),
-        'address': '', // As per new schema
-        'totalBookings': 0,
-      });
-    } else {
-      DocumentReference techRef = FirebaseFirestore.instance.collection('technicians').doc(uid);
-      batch.set(techRef, {
-        'firstName': _firstNameController.text.trim(),
-        'lastName': _lastNameController.text.trim(),
-        'idNumber': _idController.text.trim(),
-        'mobile': _mobileController.text.trim(),
-        'isApproved': false, // Technicians start unapproved
-        'rating': 0.0, // New technicians start with 0.0 rating
-        'services': [], // Initialize with empty services list
-        'searchCategories': [], // Initialize with empty search categories
-      });
-    }
-
-    // 4. Execute all writes at once
-    await batch.commit();
-
-    if (mounted) {
-      // Navigate to the correct dashboard after registration
-      if (_selectedRole == 'Customer') {
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const CustomerDashboard()));
-      } else {
-        Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const TechnicianDashboard()));
+      if (result != null) {
+        setState(() {
+          _certificateFile = File(result.files.single.path!);
+          _certificateFileName = result.files.single.name;
+        });
       }
+    } catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text("Failed to pick file: $e")));
     }
-  } on FirebaseAuthException catch (e) {
-    if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message ?? "Error")));
-  } finally {
-    if (mounted) setState(() => _isLoading = false);
   }
-}
+
+  // 2. The Main Registration Engine
+  Future<void> _registerUser() async {
+    if (!_formKey.currentState!.validate()) return;
+    
+    // Basic validation checks...
+    if (_passwordController.text != _confirmPasswordController.text) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Passwords do not match")));
+      return;
+    }
+
+    // Technician MUST upload a file
+    if (_selectedRole == 'Technician' && _certificateFile == null) {
+      ScaffoldMessenger.of(context).showSnackBar(const SnackBar(content: Text("Technicians must upload a certificate/ID."), backgroundColor: Colors.red));
+      return;
+    }
+
+    setState(() => _isLoading = true);
+    try {
+      // 1. Create the Auth Account
+      UserCredential userCredential = await FirebaseAuth.instance.createUserWithEmailAndPassword(
+        email: _emailController.text.trim(),
+        password: _passwordController.text.trim(),
+      );
+
+      final String uid = userCredential.user!.uid;
+      String? certificateUrl;
+
+      // 2. Upload the Document/Image to Firebase Storage!
+      if (_selectedRole == 'Technician' && _certificateFile != null) {
+        String extension = _certificateFileName!.split('.').last;
+        String storagePath = 'certificates/$uid.$extension';
+        
+        Reference storageRef = FirebaseStorage.instance.ref().child(storagePath);
+        await storageRef.putFile(_certificateFile!);
+        certificateUrl = await storageRef.getDownloadURL(); 
+      }
+
+      final batch = FirebaseFirestore.instance.batch();
+
+      // 3. The BASE User Data (Always in 'users' collection)
+      DocumentReference userRef = FirebaseFirestore.instance.collection('users').doc(uid);
+      batch.set(userRef, {
+        'email': _emailController.text.trim(),
+        'role': _selectedRole,
+        'username': _usernameController.text.trim(), // Discord-style handle saved centrally
+        'createdAt': FieldValue.serverTimestamp(),
+        'uid': uid,
+      });
+
+      // 4. The ROLE-SPECIFIC Data
+      if (_selectedRole == 'Customer') {
+        DocumentReference customerRef = FirebaseFirestore.instance.collection('customers').doc(uid);
+        batch.set(customerRef, {
+          'firstName': _firstNameController.text.trim(),
+          'lastName': _lastNameController.text.trim(),
+          'address': '', // As per new schema
+          'totalBookings': 0,
+        });
+      } else {
+        DocumentReference techRef = FirebaseFirestore.instance.collection('technicians').doc(uid);
+        batch.set(techRef, {
+          'firstName': _firstNameController.text.trim(),
+          'lastName': _lastNameController.text.trim(),
+          'idNumber': _idController.text.trim(),
+          'mobile': _mobileController.text.trim(),
+          'isApproved': false, // Technicians start unapproved
+          'rating': 0.0, // New technicians start with 0.0 rating
+          'services': [], // Initialize with empty services list
+          'searchCategories': [], // Initialize with empty search categories
+          'certificateUrl': certificateUrl, // THE NEW URL FROM FIREBASE STORAGE!
+        });
+      }
+
+      // 5. Execute all writes at once
+      await batch.commit();
+
+      if (mounted) {
+        // Navigate to the correct dashboard after registration
+        if (_selectedRole == 'Customer') {
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const CustomerDashboard()));
+        } else {
+          Navigator.pushReplacement(context, MaterialPageRoute(builder: (context) => const TechnicianDashboard()));
+        }
+      }
+    } on FirebaseAuthException catch (e) {
+      if (mounted) ScaffoldMessenger.of(context).showSnackBar(SnackBar(content: Text(e.message ?? "Error")));
+    } finally {
+      if (mounted) setState(() => _isLoading = false);
+    }
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -267,25 +313,33 @@ class _RegisterScreenState extends State<RegisterScreen> {
                   title: const Text("Qualifications", style: TextStyle(fontWeight: FontWeight.bold)),
                   isActive: _currentStep >= 2,
                   content: InkWell(
-                    onTap: () => setState(() => _isFileUploaded = true), // Simulates file picking
+                    // ACTUAL FILE PICKER WIRED HERE
+                    onTap: _pickCertificate, 
                     child: Container(
                       width: double.infinity,
                       padding: const EdgeInsets.all(32),
                       margin: const EdgeInsets.only(top: 8),
                       decoration: BoxDecoration(
                         color: Colors.white,
-                        border: Border.all(color: _isFileUploaded ? Colors.green : Colors.grey.shade300, width: 2),
+                        border: Border.all(color: _certificateFile != null ? Colors.green : Colors.grey.shade300, width: 2),
                         borderRadius: BorderRadius.circular(16),
                         boxShadow: [BoxShadow(color: Colors.black.withOpacity(0.02), blurRadius: 8)],
                       ),
                       child: Column(
                         children: [
-                          Icon(_isFileUploaded ? Icons.check_circle : Icons.cloud_upload_outlined, size: 48, color: _isFileUploaded ? Colors.green : Colors.blue.shade300),
+                          Icon(
+                            _certificateFile != null ? Icons.check_circle : Icons.cloud_upload_outlined, 
+                            size: 48, 
+                            color: _certificateFile != null ? Colors.green : Colors.blue.shade300
+                          ),
                           const SizedBox(height: 16),
                           Text(
-                            _isFileUploaded ? "certificate_uploaded.pdf" : "Tap to upload certificate\n(PDF, JPG, PNG)",
+                            _certificateFile != null ? _certificateFileName! : "Tap to upload certificate\n(PDF, JPG, PNG)",
                             textAlign: TextAlign.center,
-                            style: TextStyle(color: _isFileUploaded ? Colors.green.shade700 : Colors.grey.shade600, fontWeight: FontWeight.w500),
+                            style: TextStyle(
+                              color: _certificateFile != null ? Colors.green.shade700 : Colors.grey.shade600, 
+                              fontWeight: FontWeight.w500
+                            ),
                           ),
                         ],
                       ),
