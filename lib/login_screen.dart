@@ -3,8 +3,8 @@ import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'register_screen.dart';
 import 'forgot_password_screen.dart';
-import 'customer_dashboard.dart';
-import 'technician/technician_dashboard.dart';
+import 'screens/customer/customer_dashboard.dart';
+import 'screens/technician/technician_dashboard.dart';
 
 class LoginScreen extends StatefulWidget {
   const LoginScreen({super.key});

@@ -1,7 +1,7 @@
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
-import 'technician_reviews_screen.dart';
+import '../reviews/technician_reviews_screen.dart';
 
 class TechnicianProfileScreen extends StatefulWidget {
   final String technicianId;

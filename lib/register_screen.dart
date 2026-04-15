@@ -5,8 +5,8 @@ import 'package:firebase_storage/firebase_storage.dart';
 import 'package:file_picker/file_picker.dart';
 import 'dart:io';
 
-import 'customer_dashboard.dart';
-import 'technician/technician_dashboard.dart';
+import 'screens/customer/customer_dashboard.dart';
+import 'screens/technician/technician_dashboard.dart';
 
 class RegisterScreen extends StatefulWidget {
   const RegisterScreen({super.key});

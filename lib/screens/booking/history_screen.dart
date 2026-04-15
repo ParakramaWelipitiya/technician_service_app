@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'chat_detail_screen.dart'; 
+import '../chat/chat_detail_screen.dart'; 
 
 class HistoryScreen extends StatefulWidget {
   const HistoryScreen({super.key});

@@ -1,14 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart'; 
-import 'discover_screen.dart';
-import 'chat_screen.dart';
-import 'history_screen.dart';
+import '../../discover_screen.dart';
+import '../chat/chat_screen.dart';
+import '../booking/history_screen.dart';
 import 'profile_screen.dart'; 
-import 'notifications_screen.dart';
-import 'category_screen.dart';
-import 'technician_profile_screen.dart'; 
-import 'all_technicians_screen.dart';    
+import '../home/notifications_screen.dart';
+import '../home/category_screen.dart';
+import '../booking/technician_profile_screen.dart'; 
+import '../booking/all_technicians_screen.dart';    
 
 class CustomerDashboard extends StatefulWidget {
   const CustomerDashboard({super.key});

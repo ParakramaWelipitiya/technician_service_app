@@ -1,7 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
-import 'technician_profile_screen.dart';
-import 'booking_screen.dart'; 
+import '../booking/technician_profile_screen.dart';
+import '../booking/booking_screen.dart'; 
 
 class CategoryScreen extends StatelessWidget {
   final String categoryName;

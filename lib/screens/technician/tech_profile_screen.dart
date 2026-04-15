@@ -4,7 +4,7 @@ import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:image_picker/image_picker.dart';
 import 'dart:io';
-import '../login_screen.dart';
+import '../../login_screen.dart';
 
 class TechProfileScreen extends StatefulWidget {
   const TechProfileScreen({super.key});
@@ -203,7 +203,7 @@ class _TechProfileScreenState extends State<TechProfileScreen> {
                   ),
                   const SizedBox(height: 32),
                   Container(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withAlpha(13), blurRadius: 10)]),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
@@ -220,7 +220,7 @@ class _TechProfileScreenState extends State<TechProfileScreen> {
                   ),
                   const SizedBox(height: 24),
                   Container(
-                    padding: const EdgeInsets.all(20),
+                    padding: const EdgeInsets.all(10),
                     decoration: BoxDecoration(color: Colors.white, borderRadius: BorderRadius.circular(16), boxShadow: [BoxShadow(color: Colors.black.withAlpha(13), blurRadius: 10)]),
                     child: Column(
                       crossAxisAlignment: CrossAxisAlignment.start,
